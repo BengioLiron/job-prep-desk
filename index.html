@@ -54,15 +54,10 @@ body {
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-.app { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 32px; align-items: start; }
-@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } }
 
 h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
 .brand { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-family: var(--font-display); font-stretch: 125%; }
 
-/* Intake column */
-.intake { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 18px; }
-@media (max-width: 900px) { .intake { position: static; } }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
 label .hint { font-weight: 400; color: var(--muted); }
@@ -251,56 +246,211 @@ td .why { color: var(--muted); font-size: 13px; }
 .thinking .bar::after { content: ""; display: block; height: 100%; width: 30%; background: var(--accent); animation: slide 1.4s ease-in-out infinite; }
 @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
 @media (prefers-reduced-motion: reduce) { .thinking .bar::after { animation: none; width: 100%; opacity: .5; } }
+
+/* ================= Screens ================= */
+[hidden] { display: none !important; }
+.shell { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.topbar .brand { font: 700 14px var(--font-display); letter-spacing: .14em; text-transform: uppercase; font-stretch: 125%; color: var(--ink); text-decoration: none; }
+.nav { display: flex; gap: 4px; overflow-x: auto; max-width: 100%; }
+.nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; padding: 7px 12px; border-radius: 99px; white-space: nowrap; }
+.nav a:hover { color: var(--ink); background: var(--surface); }
+.nav a.active { color: var(--accent); background: var(--accent-soft); }
+.view { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.panel-title { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-stretch: 112%; }
+.eyebrow { margin: 0; font: 500 12.5px var(--font-mono); color: var(--accent); letter-spacing: .04em; }
+.lead { margin: 0; color: var(--muted); font-size: 16px; max-width: 60ch; }
+.center { text-align: center; justify-content: center; }
+.muted { color: var(--muted); }
+.back { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; align-self: flex-start; }
+.back:hover { color: var(--ink); }
+
+/* Buttons as links and as buttons share one look */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-weight: 600; font-size: 14.5px; border-radius: 8px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.soft { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--ink); background: var(--surface); }
+.btn.small { padding: 7px 12px; font-size: 13.5px; }
+.icon-btn { border: 0; background: none; color: var(--muted); font-weight: 500; font-size: 13px; padding: 6px 8px; }
+.icon-btn:hover { color: var(--ink); }
+.icon-btn.danger { color: var(--hard); }
+
+/* Home */
+.hero { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+.hero h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; font-stretch: 80%; line-height: 1.02; letter-spacing: -.01em; max-width: 18ch; }
+.banner { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; background: var(--medium-soft); color: var(--ink); border-radius: var(--radius); padding: 12px 16px; }
+.banner p { margin: 0; }
+.big-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 640px) { .big-cards { grid-template-columns: minmax(0, 1fr); } }
+.big-card { display: flex; align-items: center; gap: 16px; padding: 22px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; transition: border-color .15s, transform .15s; }
+.big-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.big-card:first-child { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.big-card:first-child .bc-text span, .big-card:first-child .bc-arrow { color: inherit; opacity: .85; }
+.big-card:first-child .bc-icon { background: rgba(255,255,255,.18); color: inherit; }
+.bc-icon { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; font-weight: 700; background: var(--accent-soft); color: var(--accent); }
+.bc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bc-text strong { font: 750 19px var(--font-display); font-stretch: 90%; }
+.bc-text span { color: var(--muted); font-size: 14px; }
+.bc-arrow { font-size: 20px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .big-card { transition: none; } .big-card:hover { transform: none; } }
+.ready-head { display: flex; justify-content: space-between; align-items: center; }
+.ready-head h2 { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-stretch: 112%; }
+.ready-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 18px; }
+.ready-list li { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.ready-list li > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.ready-list li > span:last-child span { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.r-dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 700 12px var(--font-body); background: var(--line); color: var(--muted); }
+.ready-list li.ok .r-dot, .ns.done .r-dot { background: var(--easy-soft); color: var(--easy); }
+.ready-list li.todo .r-dot { background: var(--medium-soft); color: var(--medium); }
+
+/* Page heads */
+.page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.page-head h1 { font-size: clamp(28px, 4.2vw, 40px); font-weight: 800; font-stretch: 80%; line-height: 1.05; }
+.page-head > div { display: flex; flex-direction: column; gap: 6px; }
+
+/* Saved plans */
+.saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.saved-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.saved-card:hover { border-color: var(--accent); }
+.sc-main { display: flex; flex-direction: column; gap: 4px; padding: 16px 16px 8px; color: var(--ink); text-decoration: none; min-width: 0; }
+.sc-main strong { font: 700 17px var(--font-display); font-stretch: 92%; }
+.saved-card .icon-btn { align-self: flex-end; margin: 0 8px 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip { font: 500 11.5px var(--font-mono); padding: 3px 8px; border-radius: 99px; background: var(--bg); color: var(--muted); }
+.chip.ok { background: var(--easy-soft); color: var(--easy); }
+.empty-state { align-items: center; text-align: center; padding: 34px; }
+.empty-state p { margin: 0; color: var(--muted); }
+
+/* Step-by-step flow */
+.flow-page { max-width: 680px; width: 100%; margin: 0 auto; padding: 26px 26px 20px; }
+@media (max-width: 560px) { .flow-page { padding: 20px 16px 16px; } }
+.flow { display: flex; flex-direction: column; gap: 14px; }
+.flow h2 { font-size: clamp(22px, 3.4vw, 28px); font-weight: 800; font-stretch: 85%; line-height: 1.1; }
+.flow-hint { margin: -4px 0 0; color: var(--muted); }
+.flow-progress { display: flex; align-items: center; gap: 12px; font: 500 12px var(--font-mono); color: var(--muted); }
+.dots { display: flex; gap: 5px; }
+.dots i { width: 22px; height: 4px; border-radius: 2px; background: var(--line); }
+.dots i.done { background: var(--accent); opacity: .45; }
+.dots i.on { background: var(--accent); }
+.flow-body { display: flex; flex-direction: column; gap: 12px; }
+.flow-body textarea.big { min-height: 260px; }
+.flow-error { margin: 0; color: var(--hard); font-size: 14px; min-height: 1.3em; }
+.flow-error:empty { min-height: 0; }
+.flow-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 14px; }
+.flow-actions .spacer { flex: 1; }
+.chips-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-btn { font: inherit; font-weight: 600; font-size: 15px; padding: 10px 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.choices { display: grid; gap: 10px; }
+.choice { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.choice strong { display: flex; align-items: center; gap: 8px; font-size: 15.5px; }
+.choice em { font: normal 500 11px var(--font-mono); background: var(--easy-soft); color: var(--easy); padding: 2px 7px; border-radius: 99px; }
+.choice span { color: var(--muted); font-size: 14px; font-weight: 400; }
+.choice.on { border-color: var(--accent); background: var(--accent-soft); }
+.uses { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; color: var(--muted); }
+.uses li::before { content: "–"; display: inline-block; width: 18px; }
+.uses li.ok { color: var(--ink); }
+.uses li.ok::before { content: "✓"; color: var(--easy); }
+.file-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: var(--easy-soft); }
+.file-card > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.file-card > span:last-child span { color: var(--muted); font-size: 13px; }
+.fc-icon { flex: none; font: 600 10.5px var(--font-mono); background: var(--surface); color: var(--easy); border-radius: 6px; padding: 8px 6px; }
+.review { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; }
+.review li { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.review li:first-child { border-top: 0; }
+.review li span { color: var(--muted); font-size: 14px; }
+.review li strong { font-weight: 500; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .review li { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+
+/* Pop-up dialog */
+.flow-dialog { border: 0; border-radius: 14px; padding: 24px; width: min(600px, calc(100vw - 32px)); max-height: calc(100vh - 32px); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.flow-dialog::backdrop { background: rgba(10, 14, 22, .45); }
+.flow-dialog textarea { min-height: 160px; }
+@media (max-width: 560px) { .flow-dialog { padding: 18px 16px; } }
+
+/* Working screen */
+.working { align-items: center; text-align: center; padding: 40px 20px; gap: 16px; max-width: 520px; width: 100%; margin: 20px auto 0; }
+.working p { margin: 0; }
+.spinner { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; border-color: var(--accent); } }
+.work-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.work-steps li { color: var(--muted); padding-left: 26px; position: relative; }
+.work-steps li::before { content: ""; position: absolute; left: 4px; top: 6px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); }
+.work-steps li.on { color: var(--ink); font-weight: 600; }
+.work-steps li.on::before { border-color: var(--accent); background: var(--accent-soft); }
+.work-steps li.done { color: var(--ink); }
+.work-steps li.done::before { content: "✓"; border: 0; color: var(--easy); font-weight: 700; top: 0; left: 3px; width: auto; height: auto; }
+
+/* A job plan */
+.job-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.action { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-align: left; font: inherit; cursor: pointer; text-decoration: none; min-width: 0; }
+.action:hover { border-color: var(--accent); }
+@media (max-width: 560px) {
+  .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .action { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+  .a-icon { width: 30px; height: 30px; font-size: 15px; border-radius: 8px; }
+}
+.a-icon { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; background: var(--accent-soft); color: var(--accent); }
+.action.done .a-icon { background: var(--easy-soft); color: var(--easy); }
+.a-text { display: flex; flex-direction: column; min-width: 0; }
+.a-text strong { font-size: 14.5px; }
+.a-text span { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; }
+.tab { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font-weight: 600; font-size: 14.5px; padding: 10px 14px; white-space: nowrap; margin-bottom: -1px; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+.next-steps { gap: 6px; }
+.next-steps h3 { margin-bottom: 4px; }
+.ns { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 6px 0; color: var(--ink); font-weight: 500; text-align: left; border-radius: 6px; }
+.ns:hover { color: var(--accent); }
+.ns .r-dot { background: var(--bg); border: 1.5px solid var(--line); }
+.ns.done { color: var(--muted); text-decoration: line-through; }
+.ns.done .r-dot { border-color: transparent; }
+.notes-quote { margin: 0; padding: 12px 14px; border-left: 3px solid var(--line); background: var(--surface); border-radius: 0 8px 8px 0; white-space: pre-wrap; font-size: 14px; color: var(--muted); max-height: 220px; overflow: auto; }
+
+/* Profile */
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.facts li { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
+.facts li:first-child { border-top: 0; }
+.facts p { margin: 2px 0 0; }
+.facts .muted { font-size: 13px; }
+
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 10px; font-weight: 500; font-size: 14px; box-shadow: 0 8px 30px rgba(0,0,0,.2); max-width: calc(100vw - 32px); z-index: 10; }
+.toast.error { background: var(--hard); color: #fff; }
 </style>
 </head>
 <body>
-<div class="app">
-  <aside class="intake">
-    <div class="brand">Job Prep Desk</div>
-    <form class="panel" id="form">
-      <label for="url">Job link <span class="hint">Optional. Saved with the analysis so you can reopen the posting.</span>
-        <input type="url" id="url" placeholder="https://www.linkedin.com/jobs/view/…">
-      </label>
-      <label for="text">Job description
-        <span class="hint">Open the posting, select all (Ctrl+A), copy, and paste here. This page can't open links itself.</span>
-        <textarea id="text" placeholder="Paste the full job posting text…"></textarea>
-      </label>
-      <label for="skills">Your skills <span class="hint">Used to mark what you already know.</span>
-        <input type="text" id="skills" value="Strong: Java, C, C++. Familiar: Python. Entry level, first job.">
-      </label>
-      <label for="days" class="inline">Study plan length
-        <input type="number" id="days" min="1" max="30" value="5"> <span class="hint">days</span>
-      </label>
-      <div class="row">
-        <button type="submit" class="primary" id="go">Analyze job</button>
-        <button type="button" id="stop" hidden>Stop</button>
-      </div>
-      <div class="status" id="status" role="status"></div>
-      <p class="note" id="usageNote">Uses your Claude.ai plan. No API credits needed.</p>
-    </form>
-    <div class="panel setup-panel" id="setupPanel" hidden>
-      <h2>Setup</h2>
-      <details id="aiDetails">
-        <summary>AI connection <span id="aiState" class="hint"></span></summary>
-        <p class="note">This copy runs outside claude.ai, so it reaches Claude through your own small server (worker/worker.js in the repo; the README has a 5-minute setup).</p>
-        <label for="workerUrl">Server URL <input type="url" id="workerUrl" placeholder="https://job-prep.your-name.workers.dev"></label>
-        <label for="workerToken">Access token <input type="password" id="workerToken" autocomplete="off" placeholder="The APP_TOKEN you set on the server"></label>
-        <div class="row"><button type="button" class="small soft" id="aiSave">Save and test</button></div>
-        <div class="status" id="aiStatus" role="status"></div>
-      </details>
-    </div>
-    <div class="panel folder-panel">
-      <h2>Job folders</h2>
-      <div id="folderInfo" class="cv-info"></div>
-      <div class="row">
-        <button type="button" class="small soft" id="folderPick">Choose folder</button>
-        <button type="button" class="small" id="folderReconnect" hidden>Reconnect</button>
-      </div>
-      <label class="inline check" id="autoSaveRow"><input type="checkbox" id="autoSave"> Save each job automatically</label>
-      <div class="status" id="folderStatus" role="status"></div>
-    </div>
-    <div class="panel cv-panel">
-      <h2>Your CV</h2>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="#/">Job Prep Desk</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-nav="home">Home</a>
+      <a href="#/saved" data-nav="saved">Saved plans</a>
+      <a href="#/profile" data-nav="profile">My profile</a>
+      <a href="#/settings" data-nav="settings">Settings</a>
+    </nav>
+  </header>
+  <main id="view" class="view"></main>
+</div>
+
+<!-- Panels that move into the Profile and Settings screens, plus a few hidden values older code still reads. -->
+<div id="stash" hidden>
+  <button type="button" id="go"></button><button type="button" id="stop"></button>
+  <div id="status"></div><p id="usageNote"></p>
+  <input type="number" id="days" min="1" max="30" value="5">
+  <div class="panel persist" id="skillsPanel">
+    <h2 class="panel-title">Your skills</h2>
+    <label for="skills">In one line <span class="hint">Used to mark which of a job's skills you already have.</span>
+      <input type="text" id="skills" value="Strong: Java, C, C++. Familiar: Python. Entry level, first job.">
+    </label>
+  </div>
+    <div class="panel cv-panel persist" id="cvPanel">
+      <h2 class="panel-title">Your CV</h2>
       <div id="cvInfo" class="cv-info"></div>
       <div class="row">
         <label class="file-btn"><input type="file" id="cvFile" accept="application/pdf,.pdf"><span id="cvBtnText">Upload CV (PDF)</span></label>
@@ -330,14 +480,31 @@ td .why { color: var(--muted); font-size: 13px; }
         <div class="status" id="ghStatus" role="status"></div>
       </div>
     </div>
-    <div class="panel history">
-      <h2>Saved analyses</h2>
-      <ul id="history"></ul>
+    <div class="panel setup-panel persist" id="setupPanel" hidden>
+      <h2 class="panel-title">AI connection</h2>
+      <details id="aiDetails">
+        <summary>Server details <span id="aiState" class="hint"></span></summary>
+        <p class="note">This copy runs outside claude.ai, so it reaches Claude through your own small server (worker/worker.js in the repo; the README has a 5-minute setup).</p>
+        <label for="workerUrl">Server URL <input type="url" id="workerUrl" placeholder="https://job-prep.your-name.workers.dev"></label>
+        <label for="workerToken">Access token <input type="password" id="workerToken" autocomplete="off" placeholder="The APP_TOKEN you set on the server"></label>
+        <div class="row"><button type="button" class="small soft" id="aiSave">Save and test</button></div>
+        <div class="status" id="aiStatus" role="status"></div>
+      </details>
     </div>
-  </aside>
-
-  <main class="brief" id="brief" aria-live="polite"></main>
+    <div class="panel folder-panel persist" id="folderPanel">
+      <h2 class="panel-title">Job folders</h2>
+      <div id="folderInfo" class="cv-info"></div>
+      <div class="row">
+        <button type="button" class="small soft" id="folderPick">Choose folder</button>
+        <button type="button" class="small" id="folderReconnect" hidden>Reconnect</button>
+      </div>
+      <label class="inline check" id="autoSaveRow"><input type="checkbox" id="autoSave"> Save each job automatically</label>
+      <div class="status" id="folderStatus" role="status"></div>
+    </div>
 </div>
+
+<dialog id="flowDialog" class="flow-dialog" aria-labelledby="flowTitle"></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 const EXAMPLE = {
@@ -467,7 +634,7 @@ function leetcodeSection(d) {
   const more = h("button", { type: "button", class: "small soft" }, lcBusy ? "Finding…" : "Find more questions");
   more.disabled = lcBusy;
   const st = h("span", { class: "status", role: "status" });
-  more.onclick = () => findMore(st);
+  more.onclick = () => findMore();
   return section("LeetCode practice", lc.length + " problems",
     lc.length ? h("div", { class: "table-wrap" }, h("table", {},
       h("thead", {}, h("tr", {}, h("th", {}, "Problem"), h("th", {}, "Level"), h("th", {}, "Pattern"), h("th", {}, "Why this one"))),
@@ -484,9 +651,11 @@ function leetcodeSection(d) {
     h("div", { class: "tools" }, more, st));
 }
 
-async function findMore(st) {
-  if (!sample) { st.textContent = noAi(); st.classList.add("error"); return; }
+async function findMore() {
+  if (!sample) { toast(noAi(), true); return; }
+  if (lcBusy) return;
   const d = current.data;
+  const jobId = current.id;
   lcBusy = true; replaceSection("lc");
   const s = document.querySelector('[data-sec="lc"] .status');
   s.textContent = "Looking for more problems… about 15 to 30 seconds.";
@@ -506,8 +675,9 @@ Reply with only a JSON object: {"leetcode": [{"name": "exact LeetCode title", "s
     const fresh = arr(res && res.leetcode).filter((p) => p && p.name && !seen.has(String(p.slug || "").toLowerCase()) && !seen.has(String(p.name).toLowerCase()));
     fresh.forEach((p) => { p._new = true; });
     d.leetcode = arr(d.leetcode).concat(fresh);
-    saveCurrent();
+    saveJob(jobId, d);
     msg = fresh.length ? "Added " + fresh.length + " problems (marked with a blue edge)." : "No new problems this time. Try again.";
+    toast(msg);
   } catch (err) { msg = errMsg(err); isErr = true; }
   lcBusy = false; replaceSection("lc");
   const s2 = document.querySelector('[data-sec="lc"] .status');
@@ -518,14 +688,12 @@ Reply with only a JSON object: {"leetcode": [{"name": "exact LeetCode title", "s
 let planBusy = false;
 function planSection(d) {
   const plan = arr(d.plan);
-  const days = h("input", { type: "number", min: "1", max: "30", value: String(plan.length || clampDays($("days").value)), "aria-label": "Number of days" });
-  const go = h("button", { type: "button", class: "small soft" }, planBusy ? "Rebuilding…" : "Rebuild plan");
+  const go = h("button", { type: "button", class: "small soft" }, planBusy ? "Rebuilding…" : "Change number of days");
   go.disabled = planBusy;
   const st = h("span", { class: "status", role: "status" });
-  go.onclick = () => rebuildPlan(clampDays(days.value));
-  days.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); go.click(); } });
+  go.onclick = openDaysFlow;
   return section("Study plan", plan.length + (plan.length === 1 ? " day" : " days"),
-    h("div", { class: "tools" }, h("label", { class: "inline" }, "Days", days), go, st),
+    h("div", { class: "tools" }, go, st),
     plan.length ? h("ol", { class: "plan" }, plan.map((p, i) => h("li", {},
       h("div", { class: "day" }, p.day || "Day " + (i + 1)),
       h("div", { class: "focus" }, p.focus || ""),
@@ -533,11 +701,9 @@ function planSection(d) {
 }
 
 async function rebuildPlan(n) {
-  if (!sample) {
-    const s = document.querySelector('[data-sec="plan"] .status');
-    s.textContent = noAi(); s.classList.add("error"); return;
-  }
+  if (!sample) { toast(noAi(), true); return; }
   const d = current.data;
+  const jobId = current.id;
   planBusy = true; replaceSection("plan");
   document.querySelector('[data-sec="plan"] .status').textContent = "Building a " + n + "-day plan… about 15 to 40 seconds.";
   const prompt = `${jobContext(d)}
@@ -553,10 +719,11 @@ Reply with only a JSON object: {"plan": [{"day": "Day 1", "focus": "short focus"
     const plan = arr(res && res.plan);
     if (!plan.length) throw { code: "invalid_json" };
     d.plan = plan;
-    saveCurrent();
+    saveJob(jobId, d);
     store.set("jobprep.days", n);
     $("days").value = n;
-    msg = "Plan updated.";
+    msg = "Plan updated: " + n + " days.";
+    toast(msg);
   } catch (err) { msg = errMsg(err); isErr = true; }
   planBusy = false; replaceSection("plan");
   const s2 = document.querySelector('[data-sec="plan"] .status');
@@ -567,26 +734,24 @@ Reply with only a JSON object: {"plan": [{"day": "Day 1", "focus": "short focus"
 let notesBusy = false;
 function notesSection(d) {
   const has = !!(d.company_notes && d.company_notes.trim());
-  const ta = h("textarea", { class: "notes-input", dir: "auto", rows: "3", placeholder: "Paste what the recruiter or company told you about the interview (Hebrew or English)…", "aria-label": "Notes from the company" });
-  ta.value = has ? d.company_notes : "";
-  const go = h("button", { type: "button", class: "small soft" }, notesBusy ? "Updating…" : (has ? "Update prep again" : "Update prep with these notes"));
+  const go = h("button", { type: "button", class: "small soft" }, notesBusy ? "Updating your plan…" : (has ? "Update the tips" : "Add company tips"));
   go.disabled = notesBusy;
   const st = h("span", { class: "status", role: "status" });
-  go.onclick = () => applyNotes(ta.value.trim());
-  return section("From the company", has ? "used in this prep" : null,
+  go.onclick = openNotesFlow;
+  return section("From the company", has ? "used in this plan" : null,
     arr(d.focus_areas).length ? h("div", { class: "callout" },
       h("h3", {}, "What they told you to focus on"),
       h("ul", { class: "plain" }, arr(d.focus_areas).map((f) => h("li", {}, f)))) : null,
-    h("p", { class: "note" }, has ? "Edit the notes and update again if you hear more." : "Got an email with interview tips? Paste it here and the topics, questions, LeetCode list and study plan below will be rebuilt around it."),
-    ta,
+    has ? h("blockquote", { class: "notes-quote", dir: "auto" }, d.company_notes)
+        : h("p", { class: "note" }, "Got an email from the recruiter with interview tips? Add it and the interview process, questions, LeetCode list and study plan are rebuilt around it."),
     h("div", { class: "tools" }, go, st));
 }
 
 async function applyNotes(notes) {
-  const st0 = document.querySelector('[data-sec="notes"] .status');
-  if (!notes) { st0.textContent = "Paste the notes first."; st0.classList.add("error"); return; }
-  if (!sample) { st0.textContent = noAi(); st0.classList.add("error"); return; }
+  if (!notes) { toast("Paste the tips first.", true); return; }
+  if (!sample) { toast(noAi(), true); return; }
   const d = current.data;
+  const jobId = current.id;
   const n = arr(d.plan).length || clampDays($("days").value);
   d.company_notes = notes;
   notesBusy = true; replaceSection("notes");
@@ -635,11 +800,14 @@ Rules:
     msg = "Prep updated: interview process, topics, personal questions" + (fresh.length ? ", " + fresh.length + " new LeetCode problems" : "") + " and study plan.";
   } catch (err) { msg = errMsg(err); isErr = true; }
   notesBusy = false;
-  const y = window.scrollY;
-  render(d, { id: current.id, url: current.url, example: current.example });
-  window.scrollTo(0, y);
-  const s2 = document.querySelector('[data-sec="notes"] .status');
-  s2.textContent = msg; s2.classList.toggle("error", isErr);
+  if (route.name === "job" && current.data === d) {
+    const y = window.scrollY;
+    render(d, { id: current.id, url: current.url, example: current.example });
+    window.scrollTo(0, y);
+    const s2 = document.querySelector('[data-sec="notes"] .status');
+    if (s2) { s2.textContent = msg; s2.classList.toggle("error", isErr); }
+  }
+  toast(isErr ? msg : "Company tips added: " + (d.title || "your plan") + " was updated.", isErr);
 }
 
 /* ---------- CV: upload a PDF, read its text in the browser ---------- */
@@ -698,24 +866,29 @@ function renderCvPanel() {
   replaceSection("cv");
 }
 
-$("cvFile").addEventListener("change", async () => {
-  const file = $("cvFile").files[0];
-  $("cvFile").value = "";
-  if (!file) return;
-  const st = $("cvStatus");
+async function loadCvFile(file, st) {
   st.classList.remove("error");
-  if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") { st.textContent = "Choose a PDF file."; st.classList.add("error"); return; }
+  if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") { st.textContent = "Choose a PDF file."; st.classList.add("error"); return false; }
   st.textContent = "Reading " + file.name + "…";
   try {
     const { text, pages } = await readPdf(file);
-    if (text.length < 200) { st.textContent = "This PDF has almost no text (it may be a scanned image). Export your CV from Word or Google Docs as PDF and try again."; st.classList.add("error"); return; }
-    cv = { name: file.name, text: text.slice(0, 40000), pages, date: Date.now() };
+    if (text.length < 200) { st.textContent = "This PDF has almost no text (it may be a scanned image). Export your CV from Word or Google Docs as PDF and try again."; st.classList.add("error"); return false; }
+    const facts = cv ? arr(cv.facts) : [];
+    cv = { name: file.name, text: text.slice(0, 40000), pages, date: Date.now(), facts };
     store.set(CVKEY, cv);
-    st.textContent = "CV loaded. Open any job and press Tailor my CV.";
+    st.textContent = "Got it: " + file.name + ".";
     renderCvPanel();
+    refreshActions();
+    return true;
   } catch (e) {
     st.textContent = "Couldn't read that PDF. If it's password-protected, save an unprotected copy and try again."; st.classList.add("error");
+    return false;
   }
+}
+$("cvFile").addEventListener("change", async () => {
+  const file = $("cvFile").files[0];
+  $("cvFile").value = "";
+  if (file) await loadCvFile(file, $("cvStatus"));
 });
 $("cvRemove").onclick = () => { cv = null; try { localStorage.removeItem(CVKEY); } catch {} $("cvStatus").textContent = "CV removed from this browser."; renderCvPanel(); };
 
@@ -983,18 +1156,18 @@ function cvSection(d) {
   cvMsg = null;
   const busy = agentBusy();
   const agentBtn = h("button", { type: "button", class: "small soft" }, t ? "Run CV agent again" : "Run CV agent");
-  agentBtn.disabled = cvBusy || !cv || busy;
-  agentBtn.onclick = () => runCvAgent();
+  agentBtn.disabled = cvBusy || busy;
+  agentBtn.onclick = () => (cv ? runCvAgent() : openTailorFlow());
   const quickBtn = h("button", { type: "button", class: "small" }, cvBusy ? "Tailoring…" : "Quick tailor");
-  quickBtn.disabled = cvBusy || !cv || busy;
-  quickBtn.onclick = tailorCv;
+  quickBtn.disabled = cvBusy || busy;
+  quickBtn.onclick = () => (cv ? tailorCv() : openTailorFlow());
   const panel = agentForCurrent() ? agentPanel(agent) : null;
 
   if (!t) {
     return section("Tailored CV", null,
       h("p", { class: "note" }, cv
         ? "The CV agent reads " + cv.name + " and this job, asks you about anything unclear, writes a draft, checks every line against your CV and fixes what fails. Quick tailor does it in one pass with no questions. Neither adds skills or projects you don't have."
-        : "Upload your CV (PDF) in the left panel first. Then you can get a version of it tailored to this job."),
+        : "Add your CV (PDF) and you'll get a version of it tailored to this job. Press either button to start."),
       h("div", { class: "tools" }, agentBtn, quickBtn, st),
       panel);
   }
@@ -1075,7 +1248,7 @@ function draftReport(t) {
   return { total, flagged, removed: arr(t.removed_skills) };
 }
 function reportSummary(r) {
-  return r.total + " bullets · " + (r.flagged.length ? r.flagged.length + " unverified" : "all verified") + (r.removed.length ? " · removed skills: " + r.removed.join(", ") : "");
+  return r.total + (r.total === 1 ? " bullet · " : " bullets · ") + (r.flagged.length ? r.flagged.length + " unverified" : "all verified") + (r.removed.length ? " · removed skills: " + r.removed.join(", ") : "");
 }
 function reportObs(r) {
   let s = "Honesty report: " + r.total + (r.total === 1 ? " bullet, " : " bullets, ") + r.flagged.length + " unverified.";
@@ -1296,6 +1469,8 @@ async function runCvAgent() {
   }
   a.ctl = null;
   rerenderAgent();
+  if (agentForCurrent()) refreshActions();
+  if (a.status === "done") toast("Your tailored CV is ready.");
 }
 
 function stopAgent() {
@@ -1438,6 +1613,7 @@ async function tailorCv() {
   if (!cv) return;
   if (!sample) { cvMsg = { text: noAi(), err: true }; replaceSection("cv"); return; }
   const d = current.data;
+  const jobId = current.id;
   cvBusy = true; cvMsg = { text: "Tailoring your CV… about 30 to 60 seconds." }; replaceSection("cv");
   try {
     const res = await sample.json(tailorPrompt(d, cvSourceText()));
@@ -1445,8 +1621,8 @@ async function tailorCv() {
     const t = verifyCv(res, cvSourceText());
     t._cvName = cv.name; t._date = Date.now();
     d.tailored_cv = t;
-    saveCurrent();
-    autoExport(current.id, d, current.url);
+    saveJob(jobId, d);
+    autoExport(jobId, d, jobUrl(jobId));
     cvMsg = { text: "Done. Read it through before you send it." };
   } catch (err) { cvMsg = { text: errMsg(err), err: true }; }
   cvBusy = false; replaceSection("cv");
@@ -1616,84 +1792,446 @@ const BUILDERS = { lc: leetcodeSection, plan: planSection, notes: notesSection, 
 function buildSection(key) { const el = BUILDERS[key](current.data); el.dataset.sec = key; return el; }
 function replaceSection(key) { const old = document.querySelector('[data-sec="' + key + '"]'); if (old) old.replaceWith(buildSection(key)); }
 
-function render(d, meta) {
-  current = { id: meta.id || null, url: meta.url || "", data: d, example: !!meta.example };
-  lcBusy = false; planBusy = false;
-  const brief = $("brief");
-  brief.replaceChildren();
-  if (meta.example) brief.append(h("span", { class: "example-flag" }, "Example: paste a real posting to replace this"));
+/* =====================================================================
+   SCREENS
+   Home · New job plan (one question per screen) · Saved plans ·
+   a job plan (action buttons + tabs) · My profile · Settings.
+   Hash routes (#/, #/new, #/saved, #/job/<id>, #/profile, #/settings),
+   so the browser's Back button works.
+   ===================================================================== */
+const viewEl = $("view");
+let route = { name: "home" };
+let jobTab = "overview";
+let newDraft = null; /* the wizard's answers, kept if you leave or the analysis fails */
 
-  const metaBits = [d.company, d.location, d.level].filter(Boolean).map((t) => h("span", {}, t));
-  if (meta.url) metaBits.push(h("a", { href: meta.url, target: "_blank", rel: "noopener" }, "Open posting ↗"));
-  const jump = h("a", { href: "#" }, d.tailored_cv ? "Tailored CV ↓" : "Tailor your CV ↓");
-  jump.onclick = (e) => { e.preventDefault(); const s = document.querySelector('[data-sec="cv"]'); if (s) s.scrollIntoView({ behavior: "smooth" }); };
-  metaBits.push(jump);
-  const head = h("div", { class: "head" }, h("h1", {}, d.title || "Job analysis"), h("div", { class: "meta" }, metaBits));
-  if (FS_OK && !meta.example) {
-    const sb = h("button", { type: "button", class: "small" }, "Save to folder");
-    const ss = h("span", { class: "status", role: "status" });
-    sb.onclick = async () => {
-      if (!baseDir) { await pickFolder(); if (!baseDir) return; }
-      ss.classList.remove("error"); ss.textContent = "Saving…";
-      try {
-        const r = await exportJob(current.id, current.data, current.url, true);
-        ss.textContent = r.ok ? "Saved to " + baseDir.name + "/" + r.folder + " (" + r.files.length + " files)" : "Couldn't save: permission not given.";
-        ss.classList.toggle("error", !r.ok);
-      } catch (e) { ss.textContent = "Couldn't save: " + ((e && e.message) || e); ss.classList.add("error"); }
+function showView(...nodes) {
+  viewEl.querySelectorAll(".persist").forEach((n) => $("stash").append(n));
+  viewEl.replaceChildren(...nodes.flat().filter(Boolean));
+  window.scrollTo(0, 0);
+}
+function setNav(name) { document.querySelectorAll("[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === name)); }
+function go(hash) { if (location.hash === hash) router(); else location.hash = hash; }
+function navSilently(hash) { try { history.pushState(null, "", hash); } catch { skipRoute = true; location.hash = hash; } }
+let skipRoute = false;
+function router() {
+  if (skipRoute) { skipRoute = false; return; }
+  if ($("flowDialog").open) closeDialog();
+  const [name, arg] = location.hash.replace(/^#\/?/, "").split("/");
+  if (name === "new") return showNew();
+  if (name === "saved") return showSaved();
+  if (name === "profile") return showProfile();
+  if (name === "settings") return showSettings();
+  if (name === "job") return showJob(arg);
+  return showHome();
+}
+window.addEventListener("hashchange", router);
+window.addEventListener("popstate", router);
+
+let toastT = null;
+function toast(msg, err) {
+  const t = $("toast");
+  t.textContent = msg; t.classList.toggle("error", !!err); t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, err ? 6500 : 3500);
+}
+function renderHistory() { if (route.name === "saved") showSaved(); else if (route.name === "home") showHome(); }
+const fmtDate = (t) => new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+
+/* ---------- Home ---------- */
+function greeting() { const hr = new Date().getHours(); return hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening"; }
+function bigCard(href, icon, title, desc) {
+  return h("a", { href, class: "big-card" },
+    h("span", { class: "bc-icon", "aria-hidden": "true" }, icon),
+    h("span", { class: "bc-text" }, h("strong", {}, title), h("span", {}, desc)),
+    h("span", { class: "bc-arrow", "aria-hidden": "true" }, "→"));
+}
+function readiness() {
+  const items = [
+    [!!cv, "Your CV", cv ? cv.name : "Not uploaded yet. Needed for the tailored CV.", false],
+    [!!profile, "Previous CV", profile ? "Design and format learned" : "Optional. Your old CV's design and format.", true],
+    [!!ghName(settings.githubUser), "GitHub", ghName(settings.githubUser) ? settings.githubUser : "Optional. Lets the CV agent pick your projects.", true]
+  ];
+  if (!inClaude) items.unshift([!!settings.workerUrl, "AI connection", settings.workerUrl ? "Set up" : "Needed before anything else.", false]);
+  if (FS_OK) items.push([!!baseDir, "Job folders", baseDir ? baseDir.name : "Optional. Save each plan into its own folder.", true]);
+  return h("section", { class: "panel ready" },
+    h("div", { class: "ready-head" }, h("h2", {}, "Your profile"), h("a", { href: inClaude || settings.workerUrl ? "#/profile" : "#/settings", class: "btn small soft" }, "Edit")),
+    h("ul", { class: "ready-list" }, items.map(([ok, label, sub, optional]) =>
+      h("li", { class: ok ? "ok" : optional ? "opt" : "todo" }, h("span", { class: "r-dot", "aria-hidden": "true" }, ok ? "✓" : optional ? "·" : "!"), h("span", {}, h("strong", {}, label), h("span", {}, sub))))));
+}
+function showHome() {
+  route = { name: "home" }; setNav("home");
+  const list = store.get(HKEY, []);
+  const banner = !inClaude && !settings.workerUrl
+    ? h("div", { class: "banner" }, h("p", {}, h("strong", {}, "One-time setup: "), "this copy runs outside claude.ai, so it needs your own AI server."), h("a", { href: "#/settings", class: "btn small primary" }, "Set it up"))
+    : null;
+  showView(
+    h("section", { class: "hero" },
+      h("p", { class: "eyebrow" }, greeting()),
+      h("h1", {}, "Let's get you ready for your next interview."),
+      h("p", { class: "lead" }, "Paste a job posting and answer a few quick questions. You'll get an interview plan, practice questions and a CV tailored to the job.")),
+    banner,
+    h("div", { class: "big-cards" },
+      bigCard("#/new", "＋", "Create a new job plan", "One question at a time: the posting, your CV, how many days you have."),
+      bigCard("#/saved", "▤", "Saved plans", list.length ? list.length + (list.length === 1 ? " plan" : " plans") + " · latest: " + (list[0].data.title || "Job") : "Nothing saved yet. Your plans will show up here.")),
+    readiness(),
+    h("p", { class: "note center" }, "First time? ", h("a", { href: "#/job/example" }, "Look around an example plan"), "."));
+}
+
+/* ---------- Saved plans ---------- */
+function showSaved() {
+  route = { name: "saved" }; setNav("saved");
+  const list = store.get(HKEY, []);
+  const head = h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "Saved plans"), h("p", { class: "lead" }, "Stored in this browser.")), h("a", { href: "#/new", class: "btn primary" }, "＋ New job plan"));
+  if (!list.length) return showView(head, h("div", { class: "empty-state panel" }, h("p", {}, "No plans yet."), h("a", { href: "#/new", class: "btn soft" }, "Create your first plan")));
+  showView(head, h("div", { class: "saved-grid" }, list.map((item) => {
+    const d = item.data;
+    const chips = [];
+    if (d.fit && d.fit.score != null) chips.push(h("span", { class: "chip" }, "Fit " + d.fit.score + "/10"));
+    if (arr(d.plan).length) chips.push(h("span", { class: "chip" }, arr(d.plan).length + "-day plan"));
+    if (d.company_notes) chips.push(h("span", { class: "chip" }, "Company tips"));
+    if (d.tailored_cv) chips.push(h("span", { class: "chip ok" }, "CV tailored"));
+    const del = h("button", { type: "button", class: "icon-btn", "aria-label": "Delete " + (d.title || "plan") }, "Delete");
+    let armed = null;
+    del.onclick = () => {
+      if (!armed) { del.textContent = "Sure? Click again"; del.classList.add("danger"); armed = setTimeout(() => { armed = null; del.textContent = "Delete"; del.classList.remove("danger"); }, 3000); return; }
+      clearTimeout(armed);
+      store.set(HKEY, store.get(HKEY, []).filter((x) => x.id !== item.id));
+      if (current.id === item.id) current.id = null;
+      toast("Plan deleted.");
+      showSaved();
     };
-    head.append(h("div", { class: "tools" }, sb, ss));
+    return h("div", { class: "saved-card" },
+      h("a", { href: "#/job/" + item.id, class: "sc-main" },
+        h("strong", {}, d.title || "Job"),
+        h("span", { class: "muted" }, [d.company, fmtDate(item.date)].filter(Boolean).join(" · ")),
+        h("span", { class: "chips" }, chips)),
+      del);
+  })));
+}
+
+/* ---------- Step-by-step flows (the wizard page and the pop-up dialogs) ---------- */
+function runFlow(host, cfg) {
+  let i = 0;
+  const state = cfg.state || {};
+  const draw = () => {
+    const st = cfg.steps[i];
+    const val = (v) => (typeof v === "function" ? v(state) : v);
+    const last = i === cfg.steps.length - 1;
+    const err = h("p", { class: "flow-error", role: "alert" });
+    const back = h("button", { type: "button", class: "btn ghost" }, i === 0 ? "Cancel" : "← Back");
+    back.onclick = () => { if (i === 0) { if (cfg.onCancel) cfg.onCancel(); } else { i--; draw(); } };
+    const next = h("button", { type: "button", class: "btn primary" }, last ? (cfg.finishLabel || "Done") : "Next →");
+    next.onclick = async () => {
+      const problem = st.check ? st.check(state) : null;
+      if (problem) { err.textContent = problem; return; }
+      if (last) await cfg.onFinish(state); else { i++; draw(); }
+    };
+    const skip = val(st.optional) ? h("button", { type: "button", class: "btn ghost" }, st.skipLabel || "Skip") : null;
+    if (skip) skip.onclick = async () => { if (st.onSkip) st.onSkip(state); if (last) await cfg.onFinish(state); else { i++; draw(); } };
+    const n = cfg.steps.length;
+    const progress = n > 1 ? h("div", { class: "flow-progress" }, h("span", {}, "Step " + (i + 1) + " of " + n),
+      h("div", { class: "dots", "aria-hidden": "true" }, cfg.steps.map((_, j) => h("i", { class: j < i ? "done" : j === i ? "on" : null })))) : null;
+    const body = st.body(state, { next: () => next.click(), redraw: draw });
+    host.replaceChildren(h("div", { class: "flow" },
+      cfg.title ? h("p", { class: "eyebrow" }, cfg.title) : null,
+      progress,
+      h("h2", { id: "flowTitle" }, val(st.title)),
+      st.hint ? h("p", { class: "flow-hint" }, val(st.hint)) : null,
+      h("div", { class: "flow-body" }, body),
+      err,
+      h("div", { class: "flow-actions" }, back, h("span", { class: "spacer" }), skip, next)));
+    const f = host.querySelector(".flow-body textarea, .flow-body input[type=text], .flow-body input[type=url], .flow-body .choice.on");
+    if (f) setTimeout(() => f.focus(), 40);
+  };
+  draw();
+}
+function closeDialog() { const d = $("flowDialog"); if (d.open) d.close(); d.replaceChildren(); }
+$("flowDialog").addEventListener("close", () => $("flowDialog").replaceChildren());
+function openDialogFlow(cfg) {
+  const dlg = $("flowDialog");
+  runFlow(dlg, Object.assign({}, cfg, { onCancel: closeDialog, onFinish: async (s) => { closeDialog(); await cfg.onFinish(s); } }));
+  if (!dlg.open) dlg.showModal();
+}
+
+function choices(s, key, opts) {
+  const btns = opts.map((o) => {
+    const b = h("button", { type: "button", class: "choice" + (s[key] === o.value ? " on" : ""), "aria-pressed": String(s[key] === o.value) },
+      h("strong", {}, o.title, o.badge ? h("em", {}, o.badge) : null), h("span", {}, o.desc));
+    b.onclick = () => { s[key] = o.value; btns.forEach((x, k) => { const on = opts[k].value === o.value; x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); }); };
+    return b;
+  });
+  return h("div", { class: "choices" }, btns);
+}
+function daysPicker(s) {
+  const preset = [3, 5, 7, 10, 14];
+  const input = h("input", { type: "number", min: "1", max: "30", class: "days-input", "aria-label": "Number of days" });
+  input.value = s.days;
+  const chips = preset.map((n) => { const b = h("button", { type: "button", class: "chip-btn" }, n + " days"); b.onclick = () => { s.days = n; input.value = n; mark(); }; return b; });
+  const mark = () => chips.forEach((b, k) => b.classList.toggle("on", preset[k] === s.days));
+  input.oninput = () => { s.days = clampDays(input.value); mark(); };
+  mark();
+  return [h("div", { class: "chips-row" }, chips), h("label", { class: "inline" }, "Or exactly", input, "days")];
+}
+function cvStepBody(s, api) {
+  const st = h("p", { class: "status", role: "status" });
+  const input = h("input", { type: "file", accept: "application/pdf,.pdf" });
+  input.onchange = async () => { const f = input.files[0]; input.value = ""; if (f && (await loadCvFile(f, st))) api.redraw(); };
+  return h("div", { class: "cv-step" },
+    cv ? h("div", { class: "file-card" }, h("span", { class: "fc-icon", "aria-hidden": "true" }, "PDF"), h("span", {}, h("strong", {}, cv.name), h("span", {}, cv.pages + (cv.pages === 1 ? " page" : " pages") + " · added " + fmtDate(cv.date))))
+       : h("p", { class: "note" }, "It stays in this browser. You can also skip this and add it later."),
+    h("div", { class: "row" }, h("label", { class: "file-btn" }, input, cv ? "Use a different CV" : "Upload your CV (PDF)")),
+    st);
+}
+
+/* ---------- New job plan ---------- */
+function showNew() {
+  route = { name: "new" }; setNav("");
+  const host = h("div", { class: "flow-page panel" });
+  showView(h("a", { href: "#/", class: "back" }, "← Home"), host);
+  const s = newDraft || (newDraft = { text: "", url: "", skills: $("skills").value, days: clampDays(store.get("jobprep.days", 5)), notes: "" });
+  runFlow(host, {
+    title: "New job plan", state: s, finishLabel: "Build my plan", onCancel: () => go("#/"),
+    onFinish: (st) => startAnalysis(st),
+    steps: [
+      { title: "Paste the job posting", hint: "Open the posting, select all (Ctrl+A), copy, and paste it here. Hebrew or English both work.",
+        body: (st) => {
+          const ta = h("textarea", { class: "big", dir: "auto", placeholder: "Paste the full job posting…", "aria-label": "Job posting" });
+          ta.value = st.text; ta.oninput = () => { st.text = ta.value; };
+          const url = h("input", { type: "url", placeholder: "https://…" });
+          url.value = st.url; url.oninput = () => { st.url = url.value.trim(); };
+          return [ta, h("label", {}, h("span", {}, "Link to the posting ", h("span", { class: "hint" }, "(optional, so you can reopen it)")), url)];
+        },
+        check: (st) => { const t = st.text.trim(); if (!t) return "Paste the posting text first."; if (/^https?:\/\/\S+$/.test(t)) return "That's a link. Open it, copy the text of the posting, and paste that instead."; if (t.length < 200) return "That looks too short for a job posting. Paste the whole description."; return null; } },
+      { title: "What are you good at?", hint: "One line is enough. It's used to mark which of the job's skills you already have.",
+        body: (st) => { const i = h("input", { type: "text", "aria-label": "Your skills" }); i.value = st.skills; i.oninput = () => { st.skills = i.value; }; return [i, h("p", { class: "note" }, "For example: Strong: Java, C, C++. Familiar: Python. Entry level, first job.")]; },
+        check: (st) => (st.skills.trim() ? null : "Write a few words about your skills.") },
+      { title: () => (cv ? "I'll use this CV" : "Add your CV"), hint: "It's used later to tailor your CV to this job.", optional: () => !cv, skipLabel: "Add it later", body: cvStepBody },
+      { title: "How many days until the interview?", hint: "Your study plan gets one card per day.", body: daysPicker },
+      { title: "Did the company tell you anything?", hint: "If you got a recruiter email or interview tips, paste them. The plan will focus on what they said.", optional: true, skipLabel: "Nothing yet",
+        onSkip: (st) => { st.notes = ""; },
+        body: (st) => { const ta = h("textarea", { dir: "auto", rows: "6", placeholder: "Paste the email or tips (optional)…", "aria-label": "Company tips" }); ta.value = st.notes; ta.oninput = () => { st.notes = ta.value; }; return ta; } },
+      { title: "Ready to build your plan", hint: "Here's what I'll use. It takes about a minute.",
+        body: (st) => {
+          const first = st.text.trim().split("\n").find((l) => l.trim()) || "";
+          const row = (k, v) => h("li", {}, h("span", {}, k), h("strong", {}, v));
+          return h("ul", { class: "review" },
+            row("Posting", (first.length > 60 ? first.slice(0, 60) + "…" : first) + " (" + st.text.trim().length.toLocaleString() + " characters)"),
+            row("Your skills", st.skills),
+            row("CV", cv ? cv.name : "None yet, add it later"),
+            row("Study plan", st.days + " days"),
+            row("Company tips", st.notes.trim() ? "Yes, " + st.notes.trim().length + " characters" : "None"));
+        } }
+    ]
+  });
+}
+
+async function startAnalysis(s) {
+  if (!sample) { toast(noAi(), true); return; }
+  store.set("jobprep.skills", s.skills.trim()); $("skills").value = s.skills.trim();
+  store.set("jobprep.days", s.days); $("days").value = s.days;
+  ctl = new AbortController();
+  const labels = ["Reading the posting", "Matching it to your skills", "Choosing practice questions", "Building your " + s.days + "-day plan"];
+  const lis = labels.map((t) => h("li", {}, t));
+  const timer = h("p", { class: "muted" }, "Usually 30 to 90 seconds");
+  const stop = h("button", { type: "button", class: "btn ghost" }, "Stop");
+  stop.onclick = () => ctl.abort();
+  route = { name: "working" }; setNav("");
+  showView(h("div", { class: "working panel" }, h("div", { class: "spinner", "aria-hidden": "true" }), h("h2", {}, "Building your plan…"), h("ol", { class: "work-steps" }, lis), timer, stop));
+  const started = Date.now();
+  const tick = setInterval(() => {
+    const sec = Math.round((Date.now() - started) / 1000);
+    timer.textContent = sec + "s · usually 30 to 90 seconds";
+    const at = Math.min(lis.length - 1, Math.floor(sec / 12));
+    lis.forEach((li, k) => { li.className = k < at ? "done" : k === at ? "on" : ""; });
+  }, 500);
+  try {
+    const data = await sample.json(buildPrompt(s.text.slice(0, 30000), s.url, s.skills.trim(), s.days), { signal: ctl.signal });
+    if (!data || typeof data !== "object" || !data.title) throw { code: "invalid_json" };
+    data._posting = s.text;
+    const id = String(Date.now());
+    const list = store.get(HKEY, []);
+    list.unshift({ id, date: Date.now(), url: s.url, data });
+    store.set(HKEY, list.slice(0, 15));
+    const notes = s.notes.trim();
+    newDraft = null;
+    jobTab = notes ? "notes" : "overview";
+    render(data, { id, url: s.url });
+    navSilently("#/job/" + id);
+    autoExport(id, data, s.url);
+    if (notes) { toast("Your plan is ready. Now adding the company's tips…"); applyNotes(notes); }
+    else toast("Your plan is ready.");
+  } catch (err) {
+    const code = err && err.code;
+    if (code === "cancelled") { toast("Stopped. Your answers are kept."); go("#/new"); return; }
+    const retry = h("button", { type: "button", class: "btn primary" }, "Try again");
+    retry.onclick = () => startAnalysis(s);
+    showView(h("div", { class: "working panel" }, h("h2", {}, "That didn't work"), h("p", {}, ERR[code] || "Something went wrong reaching Claude."), h("div", { class: "row center" }, h("a", { href: "#/new", class: "btn ghost" }, "Edit my answers"), retry)));
+  } finally { clearInterval(tick); }
+}
+
+/* ---------- A job plan ---------- */
+function showJob(id) {
+  if (id === "example") {
+    if (!current.example || !current.data) { jobTab = "overview"; render(structuredClone(EXAMPLE), { example: true }); }
+    else render(current.data, { example: true });
+    return;
   }
-  brief.append(head);
+  const item = store.get(HKEY, []).find((x) => x.id === id);
+  if (!item) { toast("That plan wasn't found.", true); go("#/saved"); return; }
+  if (current.id === id && current.data) { render(current.data, { id, url: item.url }); return; }
+  jobTab = "overview";
+  render(item.data, { id: item.id, url: item.url });
+}
 
-  if (d.fit && d.fit.score != null) {
-    brief.append(h("div", { class: "fit" },
-      h("div", { class: "score" }, String(d.fit.score), h("small", {}, "/10")),
-      h("p", {}, h("strong", {}, "Fit for you. "), d.fit.note || "")));
-  }
-  if (d.summary) brief.append(h("p", { class: "summary" }, d.summary));
-  if (arr(d.red_flags).length) brief.append(h("ul", { class: "flags" }, arr(d.red_flags).map((f) => h("li", {}, f))));
+function actionTile(icon, label, sub, fn, opts = {}) {
+  const tag = opts.href ? "a" : "button";
+  const el = h(tag, Object.assign({ class: "action" + (opts.done ? " done" : "") }, opts.href ? { href: opts.href, target: "_blank", rel: "noopener" } : { type: "button" }),
+    h("span", { class: "a-icon", "aria-hidden": "true" }, icon),
+    h("span", { class: "a-text" }, h("strong", {}, label), h("span", {}, sub)));
+  if (fn) el.onclick = fn;
+  return el;
+}
+const TABS = [["overview", "Overview"], ["questions", "Questions"], ["lc", "LeetCode"], ["plan", "Study plan"], ["notes", "Company tips"], ["cv", "Tailored CV"]];
+function setTab(k) {
+  jobTab = k;
+  document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === k)));
+  document.querySelectorAll(".tab-panel").forEach((p) => { p.hidden = p.dataset.panel !== k; });
+}
+function refreshActions() { const old = document.querySelector(".actions"); if (old && current.data) old.replaceWith(jobActions(current.data, current)); }
+function jobActions(d, meta) {
+  const host = meta.url ? (() => { try { return new URL(meta.url).hostname.replace(/^www\./, ""); } catch { return "posting"; } })() : "";
+  return h("div", { class: "actions" },
+    actionTile("✦", "Tailor my CV", d.tailored_cv ? "Done · run again" : cv ? "From " + cv.name : "Add your CV first", openTailorFlow, { done: !!d.tailored_cv }),
+    actionTile("✉", "Company tips", d.company_notes ? "Added · update" : "Paste the recruiter's email", openNotesFlow, { done: !!d.company_notes }),
+    actionTile("▦", "Study days", arr(d.plan).length + " days · change", openDaysFlow),
+    actionTile("⌘", "More LeetCode", arr(d.leetcode).length + (arr(d.leetcode).length === 1 ? " problem now" : " problems now"), () => { setTab("lc"); findMore(); }),
+    FS_OK && !meta.example ? actionTile("▣", "Save to folder", baseDir ? "Into " + baseDir.name : "Choose a folder", saveToFolderAction) : null,
+    meta.url ? actionTile("↗", "Open posting", host, null, { href: meta.url }) : null);
+}
+async function saveToFolderAction() {
+  if (!baseDir) { await pickFolder(); if (!baseDir) return; refreshActions(); }
+  try {
+    const r = await exportJob(current.id, current.data, current.url, true);
+    toast(r.ok ? "Saved " + r.files.length + " files to " + baseDir.name + "/" + r.folder : "Couldn't save: permission not given.", !r.ok);
+  } catch (e) { toast("Couldn't save: " + ((e && e.message) || e), true); }
+}
+function nextSteps(d) {
+  const step = (done, label, tab, fn) => {
+    const b = h("button", { type: "button", class: "ns" + (done ? " done" : "") }, h("span", { class: "r-dot", "aria-hidden": "true" }, done ? "✓" : ""), label);
+    b.onclick = fn || (() => setTab(tab));
+    return b;
+  };
+  return h("div", { class: "panel next-steps" }, h("h3", {}, "Your next steps"),
+    step(!!d.company_notes, "Add any tips the company sent you", null, openNotesFlow),
+    step(!!d.tailored_cv, "Tailor your CV to this job", null, openTailorFlow),
+    step(false, "Practice the interview questions", "questions"),
+    step(false, "Solve the LeetCode problems", "lc"),
+    step(false, "Follow your " + arr(d.plan).length + "-day study plan", "plan"));
+}
 
-  brief.append(buildSection("notes"));
+function render(d, meta) {
+  const same = !!current.id && current.id === meta.id && current.data === d;
+  current = { id: meta.id || null, url: meta.url || "", data: d, example: !!meta.example };
+  if (!same) { lcBusy = false; planBusy = false; notesBusy = false; }
+  route = { name: "job", id: current.id }; setNav(meta.example ? "home" : "saved");
+  const top = h("div", { class: "job-top" }, h("a", { href: meta.example ? "#/" : "#/saved", class: "back" }, "← " + (meta.example ? "Home" : "Saved plans")),
+    meta.example ? h("span", { class: "example-flag" }, "Example plan") : null);
+  const metaBits = [d.company, d.location, d.level].filter(Boolean).map((t) => h("span", {}, t));
+  const head = h("div", { class: "head" }, h("h1", {}, d.title || "Job plan"), h("div", { class: "meta" }, metaBits));
+  if (d.fit && d.fit.score != null) head.append(h("div", { class: "fit" }, h("div", { class: "score" }, String(d.fit.score), h("small", {}, "/10")), h("p", {}, h("strong", {}, "Fit for you. "), d.fit.note || "")));
 
-  if (arr(d.responsibilities).length) brief.append(section("What you'd do", null, h("ul", { class: "plain" }, arr(d.responsibilities).map((r) => h("li", {}, r)))));
+  const tabBar = h("div", { class: "tabs", role: "tablist", "aria-label": "Plan sections" }, TABS.map(([k, label]) => {
+    const b = h("button", { type: "button", role: "tab", class: "tab", "data-tab": k, "aria-selected": String(k === jobTab) }, label);
+    b.onclick = () => setTab(k);
+    return b;
+  }));
+  const panel = (k, ...kids) => h("div", { class: "tab-panel", role: "tabpanel", "data-panel": k, hidden: k !== jobTab }, ...kids);
 
-  brief.append(section("Knowledge they want", null, h("div", { class: "skills" },
+  const overview = [];
+  if (d.summary) overview.push(h("p", { class: "summary" }, d.summary));
+  if (arr(d.red_flags).length) overview.push(h("ul", { class: "flags" }, arr(d.red_flags).map((f) => h("li", {}, f))));
+  overview.push(nextSteps(d));
+  if (arr(d.responsibilities).length) overview.push(section("What you'd do", null, h("ul", { class: "plain" }, arr(d.responsibilities).map((r) => h("li", {}, r)))));
+  overview.push(section("Knowledge they want", null, h("div", { class: "skills" },
     h("div", {}, h("h3", {}, "Must have"), skillList(d.must_have)),
     h("div", {}, h("h3", {}, "Nice to have"), skillList(d.nice_to_have)))));
+  if (arr(d.interview_format).length) overview.push(section("Likely interview process", null, h("ol", { class: "plain" }, arr(d.interview_format).map((r) => h("li", {}, r)))));
 
-  if (arr(d.interview_format).length) brief.append(section("Likely interview process", null, h("ul", { class: "plain" }, arr(d.interview_format).map((r) => h("li", {}, r)))));
-
-  brief.append(buildSection("lc"));
-
-  if (arr(d.topics).length) brief.append(section("Technical questions to prepare", null, h("div", { class: "topics" },
+  const questions = [];
+  if (arr(d.topics).length) questions.push(section("Technical questions", null, h("div", { class: "topics" },
     arr(d.topics).map((t) => h("div", { class: "topic" }, h("h3", {}, t.topic), h("ul", {}, arr(t.questions).map((q) => h("li", {}, q))))))));
+  if (arr(d.behavioral).length) questions.push(section("Personal questions", null, h("ul", { class: "plain" }, arr(d.behavioral).map((q) => h("li", {}, q)))));
 
-  if (arr(d.behavioral).length) brief.append(section("Personal questions", null, h("ul", { class: "plain" }, arr(d.behavioral).map((q) => h("li", {}, q)))));
-
-  brief.append(buildSection("plan"));
-
-  brief.append(buildSection("cv"));
+  showView(top, head, jobActions(d, meta), tabBar,
+    panel("overview", overview), panel("questions", questions), panel("lc", buildSection("lc")),
+    panel("plan", buildSection("plan")), panel("notes", buildSection("notes")), panel("cv", buildSection("cv")));
 }
 
-/* History, kept in this browser only */
+/* ---------- Pop-up flows for a job's actions ---------- */
+function openNotesFlow() {
+  const d = current.data;
+  openDialogFlow({ title: d.title, state: { notes: d.company_notes || "" }, finishLabel: "Update my plan",
+    steps: [{ title: "What did the company tell you?", hint: "Paste the recruiter's email or interview tips (Hebrew or English). The interview process, questions, LeetCode list and study plan will be rebuilt around them.",
+      body: (s) => { const ta = h("textarea", { dir: "auto", rows: "8", "aria-label": "Company tips" }); ta.value = s.notes; ta.oninput = () => { s.notes = ta.value; }; return ta; },
+      check: (s) => (s.notes.trim() ? null : "Paste the tips first.") }],
+    onFinish: (s) => { setTab("notes"); applyNotes(s.notes.trim()); } });
+}
+function openDaysFlow() {
+  const d = current.data;
+  openDialogFlow({ title: d.title, state: { days: arr(d.plan).length || clampDays($("days").value) }, finishLabel: "Rebuild my plan",
+    steps: [{ title: "How many days do you have?", hint: "The study plan is rebuilt with one card per day.", body: daysPicker }],
+    onFinish: (s) => { setTab("plan"); rebuildPlan(s.days); } });
+}
+function openTailorFlow() {
+  if (agentBusy()) { setTab("cv"); toast("The CV agent is already working."); return; }
+  const steps = [];
+  if (!cv) steps.push({ title: "First, your CV", hint: "Upload your current CV as a PDF. It stays in this browser.", body: cvStepBody, check: () => (cv ? null : "Upload your CV to continue.") });
+  steps.push({ title: "How should I tailor it?",
+    body: (s) => [
+      choices(s, "mode", [
+        { value: "agent", title: "CV agent", badge: "Recommended", desc: "Asks you about anything unclear, checks every line against your real experience and fixes what fails. About 1 to 2 minutes." },
+        { value: "quick", title: "Quick version", desc: "One pass, no questions. You review the lines it marks." }
+      ]),
+      h("ul", { class: "uses" },
+        h("li", { class: "ok" }, "Your CV: " + (cv ? cv.name : "…")),
+        h("li", { class: profile ? "ok" : "" }, profile ? "Previous CV: its design and format" : "No previous CV (optional: adds your design)"),
+        h("li", { class: ghName(settings.githubUser) ? "ok" : "" }, ghName(settings.githubUser) ? "GitHub: " + settings.githubUser + " (agent only)" : "No GitHub (optional: lets the agent pick projects)")),
+      profile && ghName(settings.githubUser) ? null : h("p", { class: "note" }, "You can add the optional ones in ", h("a", { href: "#/profile" }, "My profile"), ".")
+    ] });
+  openDialogFlow({ title: "Tailor my CV", state: { mode: "agent" }, finishLabel: "Start", steps,
+    onFinish: (s) => { refreshActions(); setTab("cv"); if (s.mode === "agent") runCvAgent(); else tailorCv(); } });
+}
+
+/* ---------- My profile ---------- */
+function factsPanel() {
+  const facts = cv ? arr(cv.facts) : [];
+  return h("section", { class: "panel" }, h("h2", { class: "panel-title" }, "Answers you gave the CV agent"),
+    facts.length
+      ? h("ul", { class: "facts" }, facts.map((f, i) => {
+          const rm = h("button", { type: "button", class: "icon-btn" }, "Remove");
+          rm.onclick = () => { cv.facts.splice(i, 1); store.set(CVKEY, cv); renderCvInfo(); showProfile(); toast("Answer removed."); };
+          return h("li", {}, h("div", {}, h("span", { class: "muted" }, f.q), h("p", { dir: "auto" }, f.a)), rm);
+        }))
+      : h("p", { class: "note" }, "None yet. When the CV agent asks you something, your answers are kept here and count as facts about you."));
+}
+function showProfile() {
+  route = { name: "profile" }; setNav("profile");
+  renderCvPanel(); renderProfileInfo(); renderGithubUI();
+  showView(h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "My profile"), h("p", { class: "lead" }, "What the app knows about you. It all stays in this browser."))),
+    $("skillsPanel"), $("cvPanel"), factsPanel());
+}
+
+/* ---------- Settings ---------- */
+function showSettings() {
+  route = { name: "settings" }; setNav("settings");
+  renderFolderUI();
+  if (!inClaude) $("aiDetails").open = true;
+  showView(h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "Settings"))),
+    inClaude ? h("section", { class: "panel" }, h("h2", { class: "panel-title" }, "AI connection"), h("p", {}, "✓ Using Claude through your claude.ai plan. Nothing to set up.")) : $("setupPanel"),
+    $("folderPanel"));
+}
+
+/* Saved plans, kept in this browser only */
 const HKEY = "jobprep.history.v1";
-function renderHistory() {
-  const list = store.get(HKEY, []);
-  const ul = $("history");
-  ul.replaceChildren();
-  if (!list.length) { ul.append(h("li", { class: "empty" }, "Jobs you analyze are saved here, in this browser.")); return; }
-  for (const item of list) {
-    const open = h("button", { type: "button", class: "open" }, item.data.title || "Job", h("span", {}, [item.data.company, new Date(item.date).toLocaleDateString()].filter(Boolean).join(" · ")));
-    open.onclick = () => {
-      const fresh = store.get(HKEY, []).find((x) => x.id === item.id) || item;
-      render(fresh.data, { url: fresh.url, id: fresh.id });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-    const del = h("button", { type: "button", class: "del", "aria-label": "Delete " + (item.data.title || "job") }, "✕");
-    del.onclick = () => { store.set(HKEY, store.get(HKEY, []).filter((x) => x.id !== item.id)); if (current.id === item.id) current.id = null; renderHistory(); };
-    ul.append(h("li", {}, open, del));
-  }
-}
 
 /* Remember the skills line and preferred plan length */
 const savedSkills = store.get("jobprep.skills", null);
@@ -2053,51 +2591,7 @@ Rules:
 - Keep every string short and plain.`;
 }
 
-$("stop").onclick = () => ctl && ctl.abort();
-
-$("form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = $("text").value.trim();
-  const url = $("url").value.trim();
-  const days = clampDays($("days").value);
-  if (!sample) { status("Still connecting to Claude. Try again in a few seconds."); return; }
-  if (!text) { status("Paste the job description text first.", true); $("text").focus(); return; }
-  if (/^https?:\/\/\S+$/.test(text)) { status("That's a link. Open it, copy the posting text, and paste the text instead.", true); return; }
-  if (text.length < 200) { status("That looks too short for a job posting. Paste the full description.", true); return; }
-
-  ctl = new AbortController();
-  $("go").disabled = true; $("stop").hidden = false;
-  const started = Date.now();
-  const tick = setInterval(() => status("Analyzing… " + Math.round((Date.now() - started) / 1000) + "s. Usually takes 30 to 90 seconds."), 1000);
-  status("Analyzing… usually takes 30 to 90 seconds.");
-  $("brief").replaceChildren(h("div", { class: "thinking" }, h("strong", {}, "Reading the posting"), "Pulling out the summary, required knowledge and a " + days + "-day plan.", h("div", { class: "bar" })));
-
-  try {
-    const data = await sample.json(buildPrompt(text.slice(0, 30000), url, $("skills").value.trim(), days), { signal: ctl.signal });
-    if (!data || typeof data !== "object") throw { code: "invalid_json" };
-    data._posting = text;
-    const id = String(Date.now());
-    const list = store.get(HKEY, []);
-    list.unshift({ id, date: Date.now(), url, data });
-    store.set(HKEY, list.slice(0, 15));
-    render(data, { url, id });
-    renderHistory();
-    status("Done. Saved to your list.");
-    autoExport(id, data, url);
-  } catch (err) {
-    const code = err && err.code;
-    if (code === "cancelled") { status("Stopped."); render(structuredClone(EXAMPLE), { example: true }); }
-    else { status(ERR[code] || "Something went wrong reaching Claude. Press Analyze to try again.", true); render(structuredClone(EXAMPLE), { example: true }); }
-    if (code === "not_granted" || code === "sampling_disabled") $("go").disabled = true;
-  } finally {
-    clearInterval(tick);
-    $("stop").hidden = true;
-    if ($("status").textContent.indexOf("declined") === -1 && $("status").textContent.indexOf("isn't available") === -1) $("go").disabled = false;
-  }
-});
-
-render(structuredClone(EXAMPLE), { example: true });
-renderHistory();
+router();
 renderCvPanel();
 renderProfileInfo();
 if (window.claude && window.claude.use) {

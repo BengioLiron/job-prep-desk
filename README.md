@@ -1,6 +1,6 @@
 # Job Prep Desk
 
-A single-page tool for preparing for software job interviews. Paste a job posting and it builds a full prep briefing:
+A single-page tool for preparing for software job interviews. Start from the home screen, create a job plan step by step (the posting, your skills, your CV, how many days you have, any tips from the company), and get a full prep plan with clear action buttons:
 
 - **Job summary and fit score** compared to your own skills
 - **Knowledge they want**: must-have and nice-to-have skills, each marked as *You have it*, *Some* or *Gap*
