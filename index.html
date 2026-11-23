@@ -115,6 +115,35 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .cv-lists > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .cv-lists ul { margin: 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
 .cv-lists .muted { color: var(--muted); font-size: 13px; }
+.agent-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.agent-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.agent-head button { margin-left: auto; }
+.agent-status { font: 500 12px var(--font-mono); padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.agent-status.done { background: var(--easy-soft); color: var(--easy); }
+.agent-status.waiting, .agent-status.limit, .agent-status.stopped { background: var(--medium-soft); color: var(--medium); }
+.agent-status.error { background: var(--hard-soft); color: var(--hard); }
+.agent-steps { font: 500 12px var(--font-mono); color: var(--muted); }
+.trace { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.trace li { padding: 8px 0 8px 12px; border-left: 2px solid var(--line); margin-left: 9px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.trace li.err { border-left-color: var(--hard); }
+.trace .t-row { display: flex; align-items: center; gap: 8px; margin-left: -23px; }
+.trace .t-n { width: 20px; height: 20px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 11px/20px var(--font-mono); text-align: center; flex: none; }
+.trace li.err .t-n { background: var(--hard-soft); color: var(--hard); }
+.trace .t-tool { font: 500 13px var(--font-mono); }
+.trace .t-ms { font: 500 11.5px var(--font-mono); color: var(--muted); margin-left: auto; }
+.trace p { margin: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.trace .t-thought { font-style: italic; }
+.trace .t-args, .trace .t-res { color: var(--muted); font-size: 13px; }
+.trace .t-thinking { flex-direction: row; align-items: center; gap: 8px; color: var(--muted); font-size: 13.5px; border-left-style: dashed; }
+.trace .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .trace .dot { animation: none; } }
+.agent-ask { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.agent-ask h3 { color: var(--accent); }
+.agent-ask textarea { min-height: 56px; background: var(--surface); }
+.trace-saved { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; }
+.trace-saved summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.trace-saved .trace { margin-top: 10px; }
 .history h2 { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-stretch: 112%; }
 .history ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .history li { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
@@ -332,12 +361,7 @@ function skillList(items) {
 /* The analysis on screen. id is null for the example (not saved). */
 let current = { id: null, url: "", data: null, example: true };
 
-function saveCurrent() {
-  if (!current.id) return;
-  const list = store.get(HKEY, []);
-  const i = list.findIndex((x) => x.id === current.id);
-  if (i >= 0) { list[i].data = current.data; store.set(HKEY, list); }
-}
+function saveCurrent() { saveJob(current.id, current.data); }
 
 const ERR = {
   not_granted: "Claude access was declined for this page. Reload the page to be asked again.",
@@ -582,11 +606,16 @@ async function readPdf(file) {
   return { text: lines.map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n"), pages: doc.numPages };
 }
 
-function renderCvPanel() {
+function renderCvInfo() {
   const info = $("cvInfo");
+  const nf = cv ? arr(cv.facts).length : 0;
   info.replaceChildren(cv
-    ? h("div", {}, cv.name, h("span", {}, cv.pages + (cv.pages === 1 ? " page" : " pages") + " · " + cv.text.length.toLocaleString() + " characters · " + new Date(cv.date).toLocaleDateString()))
+    ? h("div", {}, cv.name, h("span", {}, cv.pages + (cv.pages === 1 ? " page" : " pages") + " · " + cv.text.length.toLocaleString() + " characters · " + new Date(cv.date).toLocaleDateString()),
+        nf ? h("span", {}, nf + (nf === 1 ? " answer" : " answers") + " you gave the CV agent, used as facts") : null)
     : h("p", { class: "note" }, "Upload your CV as a PDF to get a version tailored to each job. Only what's in your CV is used. Nothing gets added."));
+}
+function renderCvPanel() {
+  renderCvInfo();
   $("cvBtnText").textContent = cv ? "Replace CV" : "Upload CV (PDF)";
   $("cvRemove").hidden = !cv;
   replaceSection("cv");
@@ -692,16 +721,22 @@ function cvSection(d) {
   const st = h("span", { class: "status", role: "status" }, cvMsg ? cvMsg.text : "");
   if (cvMsg && cvMsg.err) st.classList.add("error");
   cvMsg = null;
-  const tailorBtn = h("button", { type: "button", class: "small " + (t ? "" : "soft") }, cvBusy ? "Tailoring…" : (t ? "Tailor again" : "Tailor my CV for this job"));
-  tailorBtn.disabled = cvBusy || !cv;
-  tailorBtn.onclick = tailorCv;
+  const busy = agentBusy();
+  const agentBtn = h("button", { type: "button", class: "small soft" }, t ? "Run CV agent again" : "Run CV agent");
+  agentBtn.disabled = cvBusy || !cv || busy;
+  agentBtn.onclick = () => runCvAgent();
+  const quickBtn = h("button", { type: "button", class: "small" }, cvBusy ? "Tailoring…" : "Quick tailor");
+  quickBtn.disabled = cvBusy || !cv || busy;
+  quickBtn.onclick = tailorCv;
+  const panel = agentForCurrent() ? agentPanel(agent) : null;
 
   if (!t) {
     return section("Tailored CV", null,
       h("p", { class: "note" }, cv
-        ? "Rewrites " + cv.name + " for this job: reorders and rewords what's already in your CV, and lists what the job wants that your CV doesn't show. It never adds skills or projects."
+        ? "The CV agent reads " + cv.name + " and this job, asks you about anything unclear, writes a draft, checks every line against your CV and fixes what fails. Quick tailor does it in one pass with no questions. Neither adds skills or projects you don't have."
         : "Upload your CV (PDF) in the left panel first. Then you can get a version of it tailored to this job."),
-      h("div", { class: "tools" }, tailorBtn, st));
+      h("div", { class: "tools" }, agentBtn, quickBtn, st),
+      panel);
   }
 
   const dlBtn = h("button", { type: "button", class: "small soft" }, "Download PDF");
@@ -719,13 +754,302 @@ function cvSection(d) {
   if (t.unchecked) checks.push(t.unchecked + (t.unchecked === 1 ? " line is" : " lines are") + " marked \"check\": the page couldn't match them word for word to your CV. Read them and fix or delete them if they aren't true.");
   if (arr(t.removed_skills).length) checks.push("Removed because they aren't in your CV: " + t.removed_skills.join(", ") + ".");
   if (checks.length) lists.push(h("div", {}, h("h3", {}, "Honesty check"), h("ul", {}, checks.map((c) => h("li", {}, c)))));
-  else lists.push(h("div", {}, h("h3", {}, "Honesty check"), h("p", { class: "muted" }, "Every bullet was matched to a line in your CV, and every skill appears in it.")));
+  else lists.push(h("div", {}, h("h3", {}, "Honesty check"), h("p", { class: "muted" }, "Every bullet was matched to a line in your CV or your answers, and every skill appears in them.")));
 
-  return section("Tailored CV", "from " + (t._cvName || "your CV"),
-    h("div", { class: "tools" }, dlBtn, copyBtn, tailorBtn, st),
+  const saved = !panel && arr(t._trace).length
+    ? h("details", { class: "trace-saved" }, h("summary", {}, "How the CV agent built this · " + t._trace.length + " steps"), traceList(t._trace, false))
+    : null;
+
+  return section("Tailored CV", "from " + (t._cvName || "your CV") + (t._trace ? " · by the CV agent" : ""),
+    h("div", { class: "tools" }, dlBtn, copyBtn, agentBtn, quickBtn, st),
+    panel, saved,
     h("p", { class: "note" }, "Click any text in the CV to edit it. Your edits are saved with this job."),
     h("div", { class: "cv-lists" }, lists),
     cvPaper(t));
+}
+
+/* =====================================================================
+   CV AGENT: our own agent loop.
+   Each turn the model gets the goal, the CV, the user's answers, the job,
+   the current draft and the step history, and replies with ONE action:
+   {"thought": "...", "tool": "<name>", "args": {...}}.
+   The page runs the tool, records the result, and loops until "finish"
+   succeeds, the user stops it, or the step limit is hit.
+   ===================================================================== */
+const AGENT_MAX_STEPS = 12;
+const AGENT_MAX_ASKS = 2;
+let agent = null; // { id, data, status, steps, draft, asks, pending, ctl, stopped, error }
+
+const agentBusy = () => !!agent && (agent.status === "running" || agent.status === "waiting");
+function agentForCurrent() {
+  if (!agent) return false;
+  return agent.id ? agent.id === current.id : agent.data === current.data;
+}
+function rerenderAgent() { if (agentForCurrent()) replaceSection("cv"); }
+
+/* Everything the honesty check accepts as true: the CV plus the user's own answers. */
+function cvSourceText() {
+  return cv.text + arr(cv.facts).map((f) => "\nQ: " + f.q + "\nA: " + f.a).join("");
+}
+
+function saveJob(id, data) {
+  if (!id) return;
+  const list = store.get(HKEY, []);
+  const i = list.findIndex((x) => x.id === id);
+  if (i >= 0) { list[i].data = data; store.set(HKEY, list); }
+}
+
+/* ---- draft helpers: bullets are addressed by id "section.entry.bullet" ---- */
+function eachBullet(t, fn) {
+  arr(t && t.sections).forEach((s, si) => arr(s.entries).forEach((e, ei) => arr(e.bullets).forEach((b, bi) => fn(b, si + "." + ei + "." + bi, e, bi))));
+}
+function findBullet(t, id) { let hit = null; eachBullet(t, (b, bid, e, bi) => { if (bid === String(id).trim()) hit = { b, e, bi }; }); return hit; }
+function recount(t) { let n = 0; eachBullet(t, (b) => { if (b.check) n++; }); t.unchecked = n; }
+function draftReport(t) {
+  const flagged = []; let total = 0;
+  eachBullet(t, (b, id) => { total++; if (b.check) flagged.push({ id, text: b.text, source: b.source }); });
+  return { total, flagged, removed: arr(t.removed_skills) };
+}
+function reportSummary(r) {
+  return r.total + " bullets · " + (r.flagged.length ? r.flagged.length + " unverified" : "all verified") + (r.removed.length ? " · removed skills: " + r.removed.join(", ") : "");
+}
+function reportObs(r) {
+  let s = "Honesty report: " + r.total + (r.total === 1 ? " bullet, " : " bullets, ") + r.flagged.length + " unverified.";
+  if (r.flagged.length) s += "\nUnverified (their source was not found word for word in the CV or the user's answers):\n" + r.flagged.map((f) => "- " + f.id + ': "' + f.text + '" (source given: "' + (f.source || "") + '")').join("\n");
+  if (r.removed.length) s += "\nSkills removed because they are not in the CV or answers: " + r.removed.join(", ") + ". Do not use them.";
+  if (!r.flagged.length) s += " The draft passes. You can finish.";
+  return s;
+}
+function draftOutline(t) {
+  if (!t) return "none yet";
+  const L = ["Headline: " + (t.headline || ""), "Summary: " + (t.summary || "")];
+  if (arr(t.skills).length) L.push("Skills: " + arr(t.skills).map((g) => (g.group ? g.group + ": " : "") + arr(g.items).join(", ")).join(" | "));
+  arr(t.sections).forEach((s, si) => {
+    L.push("[" + si + "] " + s.title);
+    arr(s.entries).forEach((e, ei) => {
+      L.push("  [" + si + "." + ei + "] " + [e.heading, e.dates].filter(Boolean).join(" | "));
+      arr(e.bullets).forEach((b, bi) => L.push("     " + si + "." + ei + "." + bi + " " + (b.check ? "✗ UNVERIFIED " : "✓ ") + b.text));
+    });
+  });
+  return L.join("\n");
+}
+
+const CV_SCHEMA = `{"name": "from the CV", "headline": "short, from CV facts", "contact": ["each item exactly as in the CV"], "summary": "2-3 sentences, CV facts only, aimed at this job", "skills": [{"group": "e.g. Languages", "items": ["exact skill names from the CV"]}], "sections": [{"title": "Experience | Projects | Education | ...", "entries": [{"heading": "title or project, organisation", "sub": "short line, may be empty", "dates": "as in the CV, may be empty", "bullets": [{"text": "the bullet", "source": "5-12 words copied EXACTLY from the CV or the user's answers"}]}]}]}`;
+
+function agentPrompt(a, d) {
+  const left = AGENT_MAX_STEPS - a.steps.length;
+  const history = a.steps.length
+    ? a.steps.map((s, i) => {
+        const recent = i >= a.steps.length - 3; /* full results for the last 3 steps, short ones before: keeps context small */
+        return (i + 1) + ". thought: " + s.thought + "\n   tool: " + s.tool + (s.args ? " (" + s.args + ")" : "") + "\n   result: " + (recent ? (s.obs || s.result) : s.result);
+      }).join("\n")
+    : "none yet";
+  const facts = arr(cv.facts).length ? arr(cv.facts).map((f) => "Q: " + f.q + "\nA: " + f.a).join("\n") : "none yet";
+  return `You are the CV agent. Goal: produce an honest CV for the candidate, tailored to the job below, that passes the honesty check.
+
+You work in steps. Reply with ONE JSON object only:
+{"thought": "1-2 short sentences: what you do now and why", "tool": "<tool name>", "args": {...}}
+
+TOOLS
+- ask_user {"questions": ["..."]}: up to 3 short, specific questions. Use it when the CV is unclear about something that matters for THIS job (your exact role in a project, what you built, tools used, scale, results). Never ask what the CV or earlier answers already say. At most ${AGENT_MAX_ASKS} times in total (used: ${a.asks}). Answers become facts you may use as sources. A skipped question means: assume nothing.
+- write_draft {"cv": CV}: write the complete tailored CV. The page checks every bullet's source and every skill and returns an honesty report.
+- fix_bullet {"id": "s.e.b", "text": "...", "source": "..."}: rewrite one bullet; the source must be copied exactly from the CV or answers.
+- remove_bullet {"id": "s.e.b"}: delete one bullet.
+- finish {"changes": ["3-6 short notes on what you changed and why"], "gaps": [{"skill": "something the job wants that the CV doesn't show", "tip": "one honest short tip"}]}: only works when the report shows 0 unverified bullets.
+
+CV FORMAT: ${CV_SCHEMA}
+
+HONESTY RULES
+- Use only facts from the CV and the user's answers. Never add a skill, tool, project, job, responsibility, number or result that isn't there. Never inflate scope or seniority.
+- You may reorder, reword to match the job's wording (same meaning), merge, shorten, and leave out what doesn't help.
+- If the job wants something the candidate doesn't show, put it in "gaps", never in the CV.
+- Write in English.
+
+GOOD STRATEGY: ask_user first only if something important is unclear; then write_draft; then fix or remove unverified bullets; then finish. Don't waste steps. Steps left: ${left}.
+
+THE CV:
+"""
+${cv.text}
+"""
+
+USER'S ANSWERS SO FAR:
+${facts}
+
+THE JOB:
+${jobContext(d)}
+Responsibilities: ${arr(d.responsibilities).join("; ")}
+${arr(d.focus_areas).length ? "The company said to focus on: " + arr(d.focus_areas).join("; ") : ""}
+
+CURRENT DRAFT:
+${draftOutline(a.draft)}
+
+STEPS SO FAR:
+${history}`;
+}
+
+async function runAgentTool(a, tool, args) {
+  const fail = (m, argText) => ({ error: true, args: argText || "", summary: m, obs: "ERROR: " + m });
+  switch (tool) {
+    case "ask_user": {
+      const qs = arr(args.questions).map((q) => String(q).trim()).filter(Boolean).slice(0, 3);
+      if (!qs.length) return fail("No questions given.");
+      if (a.asks >= AGENT_MAX_ASKS) return fail("Question limit reached. Work with what you have.", qs.join(" / "));
+      a.asks++;
+      a.status = "waiting";
+      const answers = await new Promise((res) => { a.pending = { questions: qs, resolve: res }; rerenderAgent(); });
+      a.pending = null;
+      if (!answers) return { args: qs.join(" / "), summary: "Stopped by you", obs: "The user stopped the agent." };
+      a.status = "running";
+      const pairs = qs.map((q, i) => ({ q, a: String(answers[i] || "").trim() }));
+      const answered = pairs.filter((p) => p.a);
+      if (answered.length) { cv.facts = arr(cv.facts).concat(answered.map((p) => ({ q: p.q, a: p.a, date: Date.now() }))); store.set(CVKEY, cv); renderCvInfo(); }
+      return {
+        args: qs.join(" / "),
+        summary: answered.length ? answered.length + " answered, " + (pairs.length - answered.length) + " skipped" : "You skipped all questions",
+        obs: pairs.map((p) => "Q: " + p.q + "\nA: " + (p.a || "(skipped: assume nothing)")).join("\n")
+      };
+    }
+    case "write_draft": {
+      const c = args.cv;
+      if (!c || typeof c !== "object" || !arr(c.sections).length) return fail("write_draft needs args.cv with at least one section.");
+      a.draft = verifyCv(JSON.parse(JSON.stringify(c)), cvSourceText());
+      a.draft.name = a.draft.name || c.name;
+      const r = draftReport(a.draft);
+      return { args: r.total + " bullets in " + a.draft.sections.length + " sections", summary: reportSummary(r), obs: reportObs(r) };
+    }
+    case "fix_bullet": {
+      if (!a.draft) return fail("No draft yet. Call write_draft first.");
+      const hit = findBullet(a.draft, args.id);
+      if (!hit) return fail("No bullet with id " + args.id + ". Use ids from CURRENT DRAFT.", String(args.id));
+      if (args.text) hit.b.text = String(args.text);
+      hit.b.source = String(args.source || "");
+      hit.b.check = !inCv(cvSourceText(), hit.b.source);
+      recount(a.draft);
+      const r = draftReport(a.draft);
+      return {
+        args: String(args.id), error: hit.b.check,
+        summary: hit.b.check ? "Still unverified" : "Verified · " + reportSummary(r),
+        obs: hit.b.check ? "Still unverified: that source is not in the CV or answers word for word. Copy a phrase exactly, remove the bullet, or ask the user." : "Verified. " + reportObs(r)
+      };
+    }
+    case "remove_bullet": {
+      if (!a.draft) return fail("No draft yet. Call write_draft first.");
+      const hit = findBullet(a.draft, args.id);
+      if (!hit) return fail("No bullet with id " + args.id + ". Use ids from CURRENT DRAFT.", String(args.id));
+      hit.e.bullets.splice(hit.bi, 1);
+      recount(a.draft);
+      const r = draftReport(a.draft);
+      return { args: String(args.id) + ' "' + String(hit.b.text).slice(0, 60) + '"', summary: "Removed · " + reportSummary(r), obs: "Removed. Bullet ids after it in that entry shifted down by one. " + reportObs(r) };
+    }
+    case "finish": {
+      if (!a.draft) return fail("No draft yet. Call write_draft first.");
+      const r = draftReport(a.draft);
+      if (r.flagged.length) return fail(r.flagged.length + (r.flagged.length === 1 ? " bullet is" : " bullets are") + " still unverified (" + r.flagged.map((f) => f.id).join(", ") + "). Fix or remove them first.");
+      a.draft.changes = arr(args.changes).map(String);
+      a.draft.gaps = arr(args.gaps).filter((g) => g && g.skill).map((g) => ({ skill: String(g.skill), tip: String(g.tip || "") }));
+      return { done: true, args: "", summary: "Saved the tailored CV", obs: "Done." };
+    }
+    default:
+      return fail("Unknown tool \"" + tool + "\". Use one of: ask_user, write_draft, fix_bullet, remove_bullet, finish.");
+  }
+}
+
+function saveAgentResult(a) {
+  const t = a.draft;
+  recount(t);
+  t._cvName = cv ? cv.name : ""; t._date = Date.now();
+  t._trace = a.steps.map(({ tool, thought, args, result, ms, error }) => ({ tool, thought, args, result, ms, error }));
+  const target = a.id && current.id === a.id ? current.data : a.data;
+  target.tailored_cv = t;
+  if (a.data !== target) a.data.tailored_cv = t;
+  saveJob(a.id, target);
+}
+
+async function runCvAgent() {
+  if (!cv || agentBusy()) return;
+  if (!sample) { cvMsg = { text: "Open this page on claude.ai to run the CV agent.", err: true }; replaceSection("cv"); return; }
+  const a = agent = { id: current.id, data: current.data, status: "running", steps: [], draft: null, asks: 0, pending: null, ctl: null, stopped: false, error: null };
+  let retried = false;
+  rerenderAgent();
+  try {
+    while (a.steps.length < AGENT_MAX_STEPS && !a.stopped) {
+      const t0 = performance.now();
+      a.ctl = new AbortController();
+      let reply;
+      try {
+        reply = await sample.json(agentPrompt(a, a.data), { signal: a.ctl.signal });
+      } catch (err) {
+        if (a.stopped || (err && err.code === "cancelled")) break;
+        if (err && err.code === "invalid_json" && !retried) { retried = true; continue; }
+        throw err;
+      }
+      retried = false;
+      if (a.stopped) break;
+      const tool = String((reply && reply.tool) || "?");
+      const step = { tool, thought: String((reply && reply.thought) || ""), args: "", result: "…", ms: 0 };
+      a.steps.push(step);
+      rerenderAgent();
+      const out = await runAgentTool(a, tool, (reply && typeof reply.args === "object" && reply.args) || {});
+      Object.assign(step, { args: out.args || "", result: out.summary, obs: out.obs, error: !!out.error, ms: Math.round(performance.now() - t0) });
+      if (out.done) { a.status = "done"; saveAgentResult(a); break; }
+      rerenderAgent();
+    }
+    if (a.status !== "done") {
+      a.status = a.stopped ? "stopped" : "limit";
+      if (a.draft) saveAgentResult(a); /* keep the partial draft; unverified lines stay marked "check" */
+    }
+  } catch (err) {
+    a.status = "error"; a.error = errMsg(err);
+  }
+  a.ctl = null;
+  rerenderAgent();
+}
+
+function stopAgent() {
+  const a = agent;
+  if (!a) return;
+  a.stopped = true;
+  if (a.ctl) a.ctl.abort();
+  if (a.pending) a.pending.resolve(null);
+}
+
+const AGENT_STATUS = { running: "Working", waiting: "Waiting for your answers", done: "Done", stopped: "Stopped", limit: "Hit the step limit", error: "Error" };
+function agentPanel(a) {
+  const head = h("div", { class: "agent-head" },
+    h("strong", {}, "CV agent"),
+    h("span", { class: "agent-status " + a.status }, AGENT_STATUS[a.status] || a.status),
+    h("span", { class: "agent-steps" }, "step " + a.steps.length + " of max " + AGENT_MAX_STEPS));
+  if (agentBusy()) { const stop = h("button", { type: "button", class: "small" }, "Stop"); stop.onclick = stopAgent; head.append(stop); }
+  else { const hide = h("button", { type: "button", class: "small" }, "Hide steps"); hide.onclick = () => { agent = null; replaceSection("cv"); }; head.append(hide); }
+  const kids = [head, traceList(a.steps, a.status === "running")];
+  if (a.status === "waiting" && a.pending) kids.push(questionForm(a));
+  if (a.status === "limit") kids.push(h("p", { class: "note" }, "The agent used all its steps. Its last draft is below, with any unverified lines marked \"check\"."));
+  if (a.status === "stopped" && a.draft) kids.push(h("p", { class: "note" }, "Stopped. The last draft is below."));
+  if (a.error) kids.push(h("p", { class: "status error" }, a.error));
+  return h("div", { class: "agent-panel" }, kids);
+}
+
+function traceList(steps, thinking) {
+  const items = steps.map((s, i) => h("li", { class: s.error ? "err" : null },
+    h("div", { class: "t-row" }, h("span", { class: "t-n" }, String(i + 1)), h("span", { class: "t-tool" }, s.tool), s.ms ? h("span", { class: "t-ms" }, (s.ms / 1000).toFixed(1) + "s") : null),
+    s.thought ? h("p", { class: "t-thought" }, s.thought) : null,
+    s.args ? h("p", { class: "t-args" }, "→ " + s.args) : null,
+    s.result ? h("p", { class: "t-res" }, "← " + s.result) : null));
+  if (thinking) items.push(h("li", { class: "t-thinking" }, h("span", { class: "dot" }), "Thinking about the next step…"));
+  return h("ol", { class: "trace" }, items);
+}
+
+function questionForm(a) {
+  const tas = a.pending.questions.map((q) => h("textarea", { dir: "auto", rows: "2", placeholder: "Your answer, or leave empty to skip" }));
+  const send = h("button", { type: "button", class: "small soft" }, "Send answers");
+  const skip = h("button", { type: "button", class: "small" }, "Skip these");
+  send.onclick = () => a.pending && a.pending.resolve(tas.map((t) => t.value));
+  skip.onclick = () => a.pending && a.pending.resolve(tas.map(() => ""));
+  return h("div", { class: "agent-ask" },
+    h("h3", {}, "The agent has questions"),
+    h("p", { class: "note" }, "Answer only with what's true. Your answers are saved and count as facts from your CV for every job."),
+    a.pending.questions.map((q, i) => h("label", {}, q, tas[i])),
+    h("div", { class: "tools" }, send, skip));
 }
 
 function editable(obj, key, tag, cls) {
@@ -768,9 +1092,9 @@ async function tailorCv() {
   const d = current.data;
   cvBusy = true; cvMsg = { text: "Tailoring your CV… about 30 to 60 seconds." }; replaceSection("cv");
   try {
-    const res = await sample.json(tailorPrompt(d, cv.text));
+    const res = await sample.json(tailorPrompt(d, cvSourceText()));
     if (!res || typeof res !== "object" || !arr(res.sections).length) throw { code: "invalid_json" };
-    const t = verifyCv(res, cv.text);
+    const t = verifyCv(res, cvSourceText());
     t._cvName = cv.name; t._date = Date.now();
     d.tailored_cv = t;
     saveCurrent();
