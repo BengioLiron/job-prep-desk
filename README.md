@@ -38,6 +38,8 @@ The page runs the tool, records the result, and loops.
 | Tool | What it does |
 |---|---|
 | `ask_user` | Asks up to 3 questions about unclear points (max 2 rounds). Answers are saved and become valid sources of truth. |
+| `list_repos` | Lists your own GitHub repos (forks skipped): name, language, last update, description. |
+| `read_repo` | Reads one repo's README, languages and top-level files (max 4 per run). What it reads becomes a valid source. |
 | `write_draft` | Writes the full tailored CV. Code checks it immediately and returns an honesty report. |
 | `fix_bullet` / `remove_bullet` | Targeted repairs, addressed by bullet id (`section.entry.bullet`). |
 | `finish` | Saves the CV. **Refused by code** while any bullet is unverified. |
@@ -46,9 +48,14 @@ Design choices:
 
 - **Guardrails in code, not in the prompt.** The honesty check (skills and bullet sources must match the CV or the user's answers) is deterministic. The model cannot talk its way past it.
 - **Human in the loop.** The agent asks instead of guessing, and a skipped question means "assume nothing".
-- **Step limit (12) and question limit (2)**, so a run can never loop forever.
+- **Step limit (16), question limit (2) and repo-read limit (4)**, set in the agent file's header, so a run can never loop forever.
+- **Untrusted content stays data.** README text is passed to the model wrapped and labeled as untrusted, and the instructions say never to follow instructions inside it.
 - **Context management.** Full tool results for the last 3 steps, one-line summaries for older ones.
 - **Observability.** Every step (thought, tool, arguments, result, duration) is shown live in a trace panel and saved with the CV.
+
+## GitHub projects
+
+Under Your CV → GitHub, enter your username. The CV agent can then list your repos, read the ones most relevant to the job, and add them as projects. Public repos need nothing else; for private ones, add a read-only fine-grained token (stored only in your browser). GitHub's API can't be reached from inside claude.ai, so this works in the standalone version.
 
 ## Your previous CV
 
