@@ -1954,7 +1954,7 @@ async function ghFetch(path, raw) {
   if (settings.githubToken) headers.authorization = "Bearer " + settings.githubToken;
   let r;
   try { r = await fetch("https://api.github.com" + path, { headers }); }
-  catch { throw new Error(inClaude ? "GitHub can't be reached from inside claude.ai. It works in the standalone version." : "GitHub couldn't be reached. Check your connection."); }
+  catch { throw new Error(inClaude ? "GitHub couldn't be reached. Inside claude.ai it may be blocked; it works in the standalone version." : "GitHub couldn't be reached. Check your connection."); }
   if (r.status === 401) throw new Error("GitHub rejected the token. Check it, or remove it to use public repos only.");
   if (r.status === 404) throw new Error("Not found on GitHub.");
   if (r.status === 403 || r.status === 429) throw new Error("GitHub's rate limit was reached. Try again in an hour, or add a token.");

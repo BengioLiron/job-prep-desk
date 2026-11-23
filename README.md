@@ -55,7 +55,7 @@ Design choices:
 
 ## GitHub projects
 
-Under Your CV → GitHub, enter your username. The CV agent can then list your repos, read the ones most relevant to the job, and add them as projects. Public repos need nothing else; for private ones, add a read-only fine-grained token (stored only in your browser). GitHub's API can't be reached from inside claude.ai, so this works in the standalone version.
+Under Your CV → GitHub, enter your username. The CV agent can then list your repos, read the ones most relevant to the job, and add them as projects. Public repos need nothing else; for private ones, add a read-only fine-grained token (stored only in your browser). This is built for the standalone version; inside claude.ai, outside requests to GitHub may be blocked.
 
 ## Your previous CV
 
