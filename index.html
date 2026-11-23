@@ -66,7 +66,7 @@ h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
 label .hint { font-weight: 400; color: var(--muted); }
-input[type="url"], input[type="text"], input[type="number"], textarea {
+input[type="url"], input[type="text"], input[type="number"], input[type="password"], textarea {
   font: inherit; font-size: 14px; color: var(--ink); background: var(--bg);
   border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%;
 }
@@ -144,6 +144,32 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .trace-saved { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; }
 .trace-saved summary { cursor: pointer; font-weight: 600; font-size: 14px; }
 .trace-saved .trace { margin-top: 10px; }
+.setup-panel h2, .folder-panel h2 { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-stretch: 112%; }
+.setup-panel details { display: flex; flex-direction: column; gap: 12px; }
+.setup-panel details[open] > :not(summary) { margin-top: 12px; }
+.setup-panel summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+label.check { font-weight: 500; font-size: 13.5px; }
+label.check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.sub-block { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.sub-block h3 { font-size: 14px; }
+.sub-block h3 .hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.style-line { display: flex !important; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line); flex: none; }
+.cv-paper.serif, .cv-paper.serif .cv-name, .cv-paper.serif h4 { font-family: Georgia, "Times New Roman", serif; }
+.cv-paper:not(.upper) h4 { text-transform: none; letter-spacing: 0; font-size: 15px; }
+.cv-paper.hs-plain h4 { border-bottom: 0; }
+.cv-paper.hs-filled h4 { background: var(--p-accent); color: #fff; padding: 3px 8px; border: 0; }
+.cv-paper .cv-head { display: flex; flex-direction: column; }
+.cv-paper .cv-dates.below { margin-top: -1px; }
+.cv-paper.b-dash li { list-style-type: "– "; }
+.cv-paper.b-none ul { list-style: none; padding-left: 0; }
+.cv-paper .cv-cols { display: grid; grid-template-columns: 31% minmax(0, 1fr); gap: 22px; margin-top: 6px; }
+.cv-paper.sidebar-right .cv-cols { grid-template-columns: minmax(0, 1fr) 31%; }
+.cv-paper .cv-side { background: var(--p-side); border-radius: 4px; padding: 0 10px 10px; min-width: 0; font-size: 13px; }
+.cv-paper .cv-main { min-width: 0; }
+.cv-paper .cv-contact-item { overflow-wrap: anywhere; }
+@media (max-width: 560px) { .cv-paper .cv-cols, .cv-paper.sidebar-right .cv-cols { grid-template-columns: minmax(0, 1fr); } }
+.head .tools .status { flex: 1 1 200px; }
 .history h2 { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-stretch: 112%; }
 .history ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .history li { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
@@ -250,6 +276,27 @@ td .why { color: var(--muted); font-size: 13px; }
       <div class="status" id="status" role="status"></div>
       <p class="note" id="usageNote">Uses your Claude.ai plan. No API credits needed.</p>
     </form>
+    <div class="panel setup-panel" id="setupPanel" hidden>
+      <h2>Setup</h2>
+      <details id="aiDetails">
+        <summary>AI connection <span id="aiState" class="hint"></span></summary>
+        <p class="note">This copy runs outside claude.ai, so it reaches Claude through your own small server (worker/worker.js in the repo; the README has a 5-minute setup).</p>
+        <label for="workerUrl">Server URL <input type="url" id="workerUrl" placeholder="https://job-prep.your-name.workers.dev"></label>
+        <label for="workerToken">Access token <input type="password" id="workerToken" autocomplete="off" placeholder="The APP_TOKEN you set on the server"></label>
+        <div class="row"><button type="button" class="small soft" id="aiSave">Save and test</button></div>
+        <div class="status" id="aiStatus" role="status"></div>
+      </details>
+    </div>
+    <div class="panel folder-panel">
+      <h2>Job folders</h2>
+      <div id="folderInfo" class="cv-info"></div>
+      <div class="row">
+        <button type="button" class="small soft" id="folderPick">Choose folder</button>
+        <button type="button" class="small" id="folderReconnect" hidden>Reconnect</button>
+      </div>
+      <label class="inline check" id="autoSaveRow"><input type="checkbox" id="autoSave"> Save each job automatically</label>
+      <div class="status" id="folderStatus" role="status"></div>
+    </div>
     <div class="panel cv-panel">
       <h2>Your CV</h2>
       <div id="cvInfo" class="cv-info"></div>
@@ -258,6 +305,16 @@ td .why { color: var(--muted); font-size: 13px; }
         <button type="button" class="small" id="cvRemove" hidden>Remove</button>
       </div>
       <div class="status" id="cvStatus" role="status"></div>
+      <div class="sub-block">
+        <h3>Previous CV <span class="hint">· your format, design and extra facts</span></h3>
+        <div id="profileInfo" class="cv-info"></div>
+        <div class="row">
+          <label class="file-btn"><input type="file" id="profileFile" accept="application/pdf,.pdf"><span id="profileBtnText">Upload previous CV</span></label>
+          <button type="button" class="small" id="profileRelearn" hidden>Learn design again</button>
+          <button type="button" class="small" id="profileRemove" hidden>Remove</button>
+        </div>
+        <div class="status" id="profileStatus" role="status"></div>
+      </div>
     </div>
     <div class="panel history">
       <h2>Saved analyses</h2>
@@ -371,7 +428,11 @@ const ERR = {
   prompt_too_large: "The pasted text is too long. Paste only the job description part.",
   refused: "Claude couldn't do this. Try again.",
   invalid_json: "The answer came back in the wrong format. Try again.",
-  empty_completion: "Claude returned nothing. Try again."
+  empty_completion: "Claude returned nothing. Try again.",
+  server_unreachable: "Couldn't reach your AI server. Check the URL in Setup.",
+  server_denied: "Your AI server refused the request. Check the access token in Setup, and that this site is in ALLOWED_ORIGINS.",
+  server_error: "Your AI server returned an error. Try again; if it keeps happening, check the server's logs.",
+  agent_file: "Couldn't load the agent's instructions (agents/cv-agent.md)."
 };
 const errMsg = (err) => ERR[err && err.code] || "Something went wrong reaching Claude. Try again.";
 
@@ -410,7 +471,7 @@ function leetcodeSection(d) {
 }
 
 async function findMore(st) {
-  if (!sample) { st.textContent = "Open this page on claude.ai to find more questions."; st.classList.add("error"); return; }
+  if (!sample) { st.textContent = noAi(); st.classList.add("error"); return; }
   const d = current.data;
   lcBusy = true; replaceSection("lc");
   const s = document.querySelector('[data-sec="lc"] .status');
@@ -460,7 +521,7 @@ function planSection(d) {
 async function rebuildPlan(n) {
   if (!sample) {
     const s = document.querySelector('[data-sec="plan"] .status');
-    s.textContent = "Open this page on claude.ai to rebuild the plan."; s.classList.add("error"); return;
+    s.textContent = noAi(); s.classList.add("error"); return;
   }
   const d = current.data;
   planBusy = true; replaceSection("plan");
@@ -510,7 +571,7 @@ function notesSection(d) {
 async function applyNotes(notes) {
   const st0 = document.querySelector('[data-sec="notes"] .status');
   if (!notes) { st0.textContent = "Paste the notes first."; st0.classList.add("error"); return; }
-  if (!sample) { st0.textContent = "Open this page on claude.ai to update the prep."; st0.classList.add("error"); return; }
+  if (!sample) { st0.textContent = noAi(); st0.classList.add("error"); return; }
   const d = current.data;
   const n = arr(d.plan).length || clampDays($("days").value);
   d.company_notes = notes;
@@ -569,6 +630,8 @@ Rules:
 
 /* ---------- CV: upload a PDF, read its text in the browser ---------- */
 const CVKEY = "jobprep.cv.v1";
+const PROFILEKEY = "jobprep.profile.v1";
+let profile = store.get(PROFILEKEY, null); // { name, text, pages, date, style }
 let cv = store.get(CVKEY, null); // { name, text, pages, date }
 const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
 const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
@@ -642,6 +705,186 @@ $("cvFile").addEventListener("change", async () => {
 });
 $("cvRemove").onclick = () => { cv = null; try { localStorage.removeItem(CVKEY); } catch {} $("cvStatus").textContent = "CV removed from this browser."; renderCvPanel(); };
 
+/* =====================================================================
+   PREVIOUS CV: extra facts about you + your preferred format and design.
+   The text joins the honesty check's sources. The design is learned once
+   (from an image of page 1 plus font measurements) and stored as a small
+   style object that the preview and the PDF both follow.
+   ===================================================================== */
+async function readPdfDetailed(file) {
+  const lib = await ensurePdfJs();
+  const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+  const lines = [], sizes = {}, fams = {}, fonts = {};
+  let image = null;
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    if (i === 1) {
+      try {
+        const vp = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+        image = await new Promise((res) => canvas.toBlob(res, "image/png"));
+      } catch {}
+    }
+    const tc = await page.getTextContent();
+    let line = "";
+    for (const it of tc.items) {
+      line += it.str;
+      if (it.hasEOL) { lines.push(line); line = ""; }
+      const n = it.str.trim().length;
+      if (!n) continue;
+      const sz = Math.round(Math.hypot(it.transform[2], it.transform[3]) * 2) / 2;
+      sizes[sz] = (sizes[sz] || 0) + n;
+      const fam = tc.styles[it.fontName] && tc.styles[it.fontName].fontFamily;
+      if (fam) fams[fam] = (fams[fam] || 0) + n;
+      if (i === 1) {
+        try { const fo = page.commonObjs.get(it.fontName); if (fo && fo.name) { const nm = fo.name.replace(/^[A-Z]{6}\+/, ""); fonts[nm] = (fonts[nm] || 0) + n; } } catch {}
+      }
+    }
+    if (line) lines.push(line);
+  }
+  const top = (o, k) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, k).map((e) => e[0]);
+  return {
+    text: lines.map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n"),
+    pages: doc.numPages,
+    image,
+    hints: { sizes: top(sizes, 6), maxSize: Math.max(0, ...Object.keys(sizes).map(Number)), families: top(fams, 3), fonts: top(fonts, 4) }
+  };
+}
+
+function stylePrompt(r, withImage) {
+  return `You are looking at ${withImage ? "an image of the first page and " : ""}the extracted text of a candidate's previous CV. Describe its structure, writing style and visual design so a program can produce new CVs that look and read the same.
+
+Measured from the PDF:
+- font names (most used first): ${r.hints.fonts.join(", ") || "unknown"}
+- generic font family: ${r.hints.families.join(", ") || "unknown"}
+- font sizes in pt (most text first): ${r.hints.sizes.join(", ")}; largest: ${r.hints.maxSize}
+- pages: ${r.pages}
+
+TEXT:
+"""
+${r.text.slice(0, 12000)}
+"""
+
+Reply with only one JSON object:
+{
+  "layout": "single" | "sidebar-left" | "sidebar-right",
+  "font": "sans" | "serif",
+  "font_name": "main font name if known",
+  "accent": "#rrggbb color of headings or lines (#222222 if everything is black)",
+  "text_color": "#rrggbb",
+  "sidebar_bg": "#rrggbb sidebar background, or empty string if none",
+  "name_size": number (pt),
+  "body_size": number (pt),
+  "name_align": "left" | "center",
+  "heading_case": "upper" | "title",
+  "heading_style": "rule-below" | "plain" | "filled",
+  "contact_position": "under-name" | "sidebar",
+  "date_position": "right" | "below",
+  "bullet": "•" | "-" | "none",
+  "section_order": ["the section titles exactly as written, in order"],
+  "section_titles": {"summary": "", "skills": "", "experience": "", "projects": "", "education": ""},
+  "sidebar_sections": ["titles of sections that sit in the sidebar, empty if single column"],
+  "length": "one page" | "two pages",
+  "headline_style": "how the line under the name is written",
+  "bullet_style": "how bullets are written: verb first? numbers? length?",
+  "notes": "anything else worth copying, short"
+}
+${withImage ? "" : "You can't see the page, so infer layout and colors only if the text makes them clear; otherwise use single, #222222 and rule-below."}`;
+}
+
+async function analyzeStyle(r) {
+  let canImages = false;
+  try { canImages = !!(sample.limits && (await sample.limits()).images); } catch {}
+  const withImage = canImages && !!r.image;
+  const style = await sample.json(stylePrompt(r, withImage), withImage ? { images: [r.image] } : {});
+  if (!style || typeof style !== "object") throw { code: "invalid_json" };
+  style._fromImage = withImage;
+  return style;
+}
+
+function renderProfileInfo() {
+  const box = $("profileInfo");
+  if (!profile) {
+    box.replaceChildren(h("p", { class: "note" }, "Optional. Upload a CV you've used before: tailored CVs will follow its structure and design, and its content counts as true facts about you."));
+  } else {
+    const s = profile.style;
+    const bits = s ? [s.layout === "single" ? "one column" : "sidebar", s.font === "serif" ? "serif" : "sans-serif", s.heading_case === "upper" ? "uppercase headings" : "title-case headings"] : [];
+    box.replaceChildren(h("div", {}, profile.name,
+      h("span", {}, profile.pages + (profile.pages === 1 ? " page" : " pages") + " · " + new Date(profile.date).toLocaleDateString()),
+      s ? h("span", { class: "style-line" }, h("i", { class: "swatch", style: "background:" + cvStyle().accent }), "Design: " + bits.join(", ") + (s._fromImage ? "" : " (from text only)"))
+        : h("span", {}, "Design not learned yet.")));
+  }
+  $("profileBtnText").textContent = profile ? "Replace" : "Upload previous CV";
+  $("profileRemove").hidden = !profile;
+  $("profileRelearn").hidden = !profile || !profile._canRelearn;
+}
+
+let profileRaw = null; /* last read PDF, kept in memory to re-learn the design without re-uploading */
+async function learnProfileStyle() {
+  const st = $("profileStatus");
+  if (!profileRaw) return;
+  if (!sample) { st.textContent = "Saved its text. " + noAi(); st.classList.add("error"); return; }
+  st.classList.remove("error");
+  st.textContent = "Learning its format and design… about 20 to 40 seconds.";
+  $("profileRelearn").disabled = true;
+  try {
+    profile.style = await analyzeStyle(profileRaw);
+    profile._canRelearn = false;
+    store.set(PROFILEKEY, profile);
+    st.textContent = "Done. New tailored CVs will follow this format and design.";
+    replaceSection("cv");
+  } catch (e) {
+    profile._canRelearn = true;
+    st.textContent = errMsg(e); st.classList.add("error");
+  }
+  $("profileRelearn").disabled = false;
+  renderProfileInfo();
+}
+
+$("profileFile").addEventListener("change", async () => {
+  const file = $("profileFile").files[0];
+  $("profileFile").value = "";
+  if (!file) return;
+  const st = $("profileStatus");
+  st.classList.remove("error");
+  if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") { st.textContent = "Choose a PDF file."; st.classList.add("error"); return; }
+  st.textContent = "Reading " + file.name + "…";
+  try {
+    profileRaw = await readPdfDetailed(file);
+  } catch {
+    st.textContent = "Couldn't read that PDF. If it's password-protected, save an unprotected copy."; st.classList.add("error"); return;
+  }
+  if (profileRaw.text.length < 200) { st.textContent = "This PDF has almost no text (it may be a scanned image)."; st.classList.add("error"); return; }
+  profile = { name: file.name, text: profileRaw.text.slice(0, 40000), pages: profileRaw.pages, date: Date.now(), style: null, _canRelearn: true };
+  store.set(PROFILEKEY, profile);
+  renderProfileInfo();
+  await learnProfileStyle();
+});
+$("profileRelearn").onclick = learnProfileStyle;
+$("profileRemove").onclick = () => {
+  profile = null; profileRaw = null;
+  try { localStorage.removeItem(PROFILEKEY); } catch {}
+  $("profileStatus").textContent = "Previous CV removed. Tailored CVs use the standard design.";
+  renderProfileInfo();
+  replaceSection("cv");
+};
+
+function preferredFormatText() {
+  const s = profile && profile.style;
+  if (!s) return "No previous CV given. Use a clean, standard structure.";
+  const L = [];
+  if (arr(s.section_order).length) L.push("Section order: " + s.section_order.join(" → ") + ". Use these exact titles for section \"title\" fields when the content fits. Summary and skills have their own fields; the page places them in this order.");
+  const named = Object.entries(s.section_titles || {}).filter(([, v]) => v).map(([k, v]) => k + ' = "' + v + '"');
+  if (named.length) L.push("Section titles: " + named.join(", ") + ".");
+  if (s.headline_style) L.push("Headline: " + s.headline_style);
+  if (s.bullet_style) L.push("Bullets: " + s.bullet_style);
+  if (s.length) L.push("Length: " + s.length + ". Keep it to that.");
+  if (s.notes) L.push("Also: " + s.notes);
+  return L.join("\n") || "Use a clean, standard structure.";
+}
+
 /* ---------- Honesty checks, done here in the page, not by Claude ---------- */
 const squash = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9֐-׿+#]/g, "");
 function inCv(cvText, phrase) {
@@ -684,7 +927,7 @@ let cvMsg = null;
 function tailorPrompt(d, cvText) {
   return `You tailor a candidate's CV to one job. The CV text below is the ONLY source of truth about the candidate.
 
-THE CV (extracted from a PDF, line breaks may be messy):
+THE CV, plus the previous CV and the candidate's own answers if any (extracted from PDFs, line breaks may be messy):
 """
 ${cvText}
 """
@@ -693,6 +936,9 @@ THE JOB:
 ${jobContext(d)}
 Responsibilities: ${arr(d.responsibilities).join("; ")}
 ${arr(d.focus_areas).length ? "The company said to focus on: " + arr(d.focus_areas).join("; ") : ""}
+
+THE CANDIDATE'S PREFERRED FORMAT (from their previous CV):
+${preferredFormatText()}
 
 HARD RULES (breaking any of them makes the CV useless):
 1. Use only facts that are in the CV: employers, titles, projects, degrees, dates, tools, numbers and achievements. Never add a skill, tool, language, technology, project, job, responsibility, certification, course or number that is not in the CV. Never inflate numbers, seniority or scope.
@@ -776,8 +1022,9 @@ function cvSection(d) {
    The page runs the tool, records the result, and loops until "finish"
    succeeds, the user stops it, or the step limit is hit.
    ===================================================================== */
-const AGENT_MAX_STEPS = 12;
-const AGENT_MAX_ASKS = 2;
+/* Limits come from the agent file's header (agents/cv-agent.md); these are fallbacks. */
+let AGENT_MAX_STEPS = 12;
+let AGENT_MAX_ASKS = 2;
 let agent = null; // { id, data, status, steps, draft, asks, pending, ctl, stopped, error }
 
 const agentBusy = () => !!agent && (agent.status === "running" || agent.status === "waiting");
@@ -789,7 +1036,7 @@ function rerenderAgent() { if (agentForCurrent()) replaceSection("cv"); }
 
 /* Everything the honesty check accepts as true: the CV plus the user's own answers. */
 function cvSourceText() {
-  return cv.text + arr(cv.facts).map((f) => "\nQ: " + f.q + "\nA: " + f.a).join("");
+  return cv.text + (profile ? "\n" + profile.text : "") + arr(cv.facts).map((f) => "\nQ: " + f.q + "\nA: " + f.a).join("");
 }
 
 function saveJob(id, data) {
@@ -836,55 +1083,51 @@ function draftOutline(t) {
 
 const CV_SCHEMA = `{"name": "from the CV", "headline": "short, from CV facts", "contact": ["each item exactly as in the CV"], "summary": "2-3 sentences, CV facts only, aimed at this job", "skills": [{"group": "e.g. Languages", "items": ["exact skill names from the CV"]}], "sections": [{"title": "Experience | Projects | Education | ...", "entries": [{"heading": "title or project, organisation", "sub": "short line, may be empty", "dates": "as in the CV, may be empty", "bullets": [{"text": "the bullet", "source": "5-12 words copied EXACTLY from the CV or the user's answers"}]}]}]}`;
 
-function agentPrompt(a, d) {
-  const left = AGENT_MAX_STEPS - a.steps.length;
+/* ---- Agent files: instructions live in agents/<name>.md, the code fills in the live state ---- */
+const agentFiles = {};
+async function loadAgent(name) {
+  if (agentFiles[name]) return agentFiles[name];
+  let text;
+  try {
+    const res = await fetch("agents/" + name + ".md", { cache: "no-cache" });
+    if (!res.ok) throw new Error(res.status);
+    text = await res.text();
+  } catch (e) {
+    throw { code: "agent_file", message: "Couldn't load agents/" + name + ".md" };
+  }
+  const meta = {};
+  let body = text;
+  const m = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+  if (m) {
+    body = text.slice(m[0].length);
+    for (const line of m[1].split("\n")) { const kv = line.match(/^(\w+):\s*(.*)$/); if (kv) meta[kv[1]] = kv[2].trim(); }
+  }
+  return (agentFiles[name] = { meta, body });
+}
+function fillTemplate(body, vars) {
+  return body.replace(/\{\{(\w+)\}\}/g, (all, k) => (k in vars ? String(vars[k]) : all));
+}
+
+function agentPrompt(file, a, d) {
   const history = a.steps.length
     ? a.steps.map((s, i) => {
         const recent = i >= a.steps.length - 3; /* full results for the last 3 steps, short ones before: keeps context small */
         return (i + 1) + ". thought: " + s.thought + "\n   tool: " + s.tool + (s.args ? " (" + s.args + ")" : "") + "\n   result: " + (recent ? (s.obs || s.result) : s.result);
       }).join("\n")
     : "none yet";
-  const facts = arr(cv.facts).length ? arr(cv.facts).map((f) => "Q: " + f.q + "\nA: " + f.a).join("\n") : "none yet";
-  return `You are the CV agent. Goal: produce an honest CV for the candidate, tailored to the job below, that passes the honesty check.
-
-You work in steps. Reply with ONE JSON object only:
-{"thought": "1-2 short sentences: what you do now and why", "tool": "<tool name>", "args": {...}}
-
-TOOLS
-- ask_user {"questions": ["..."]}: up to 3 short, specific questions. Use it when the CV is unclear about something that matters for THIS job (your exact role in a project, what you built, tools used, scale, results). Never ask what the CV or earlier answers already say. At most ${AGENT_MAX_ASKS} times in total (used: ${a.asks}). Answers become facts you may use as sources. A skipped question means: assume nothing.
-- write_draft {"cv": CV}: write the complete tailored CV. The page checks every bullet's source and every skill and returns an honesty report.
-- fix_bullet {"id": "s.e.b", "text": "...", "source": "..."}: rewrite one bullet; the source must be copied exactly from the CV or answers.
-- remove_bullet {"id": "s.e.b"}: delete one bullet.
-- finish {"changes": ["3-6 short notes on what you changed and why"], "gaps": [{"skill": "something the job wants that the CV doesn't show", "tip": "one honest short tip"}]}: only works when the report shows 0 unverified bullets.
-
-CV FORMAT: ${CV_SCHEMA}
-
-HONESTY RULES
-- Use only facts from the CV and the user's answers. Never add a skill, tool, project, job, responsibility, number or result that isn't there. Never inflate scope or seniority.
-- You may reorder, reword to match the job's wording (same meaning), merge, shorten, and leave out what doesn't help.
-- If the job wants something the candidate doesn't show, put it in "gaps", never in the CV.
-- Write in English.
-
-GOOD STRATEGY: ask_user first only if something important is unclear; then write_draft; then fix or remove unverified bullets; then finish. Don't waste steps. Steps left: ${left}.
-
-THE CV:
-"""
-${cv.text}
-"""
-
-USER'S ANSWERS SO FAR:
-${facts}
-
-THE JOB:
-${jobContext(d)}
-Responsibilities: ${arr(d.responsibilities).join("; ")}
-${arr(d.focus_areas).length ? "The company said to focus on: " + arr(d.focus_areas).join("; ") : ""}
-
-CURRENT DRAFT:
-${draftOutline(a.draft)}
-
-STEPS SO FAR:
-${history}`;
+  return fillTemplate(file.body, {
+    max_questions: AGENT_MAX_ASKS,
+    questions_used: a.asks,
+    steps_left: AGENT_MAX_STEPS - a.steps.length,
+    cv_schema: CV_SCHEMA,
+    preferred_format: preferredFormatText(),
+    cv: cv.text,
+    previous_cv: profile ? profile.text : "none",
+    answers: arr(cv.facts).length ? arr(cv.facts).map((f) => "Q: " + f.q + "\nA: " + f.a).join("\n") : "none yet",
+    job: jobContext(d) + "\nResponsibilities: " + arr(d.responsibilities).join("; ") + (arr(d.focus_areas).length ? "\nThe company said to focus on: " + arr(d.focus_areas).join("; ") : ""),
+    draft: draftOutline(a.draft),
+    history
+  });
 }
 
 async function runAgentTool(a, tool, args) {
@@ -963,21 +1206,25 @@ function saveAgentResult(a) {
   target.tailored_cv = t;
   if (a.data !== target) a.data.tailored_cv = t;
   saveJob(a.id, target);
+  autoExport(a.id, target, jobUrl(a.id));
 }
 
 async function runCvAgent() {
   if (!cv || agentBusy()) return;
-  if (!sample) { cvMsg = { text: "Open this page on claude.ai to run the CV agent.", err: true }; replaceSection("cv"); return; }
+  if (!sample) { cvMsg = { text: noAi(), err: true }; replaceSection("cv"); return; }
   const a = agent = { id: current.id, data: current.data, status: "running", steps: [], draft: null, asks: 0, pending: null, ctl: null, stopped: false, error: null };
   let retried = false;
   rerenderAgent();
   try {
+    const file = await loadAgent("cv-agent");
+    AGENT_MAX_STEPS = Math.min(30, Math.max(1, parseInt(file.meta.max_steps, 10) || 12));
+    AGENT_MAX_ASKS = Math.min(5, Math.max(0, parseInt(file.meta.max_questions, 10) || 2));
     while (a.steps.length < AGENT_MAX_STEPS && !a.stopped) {
       const t0 = performance.now();
       a.ctl = new AbortController();
       let reply;
       try {
-        reply = await sample.json(agentPrompt(a, a.data), { signal: a.ctl.signal });
+        reply = await sample.json(agentPrompt(file, a, a.data), { signal: a.ctl.signal });
       } catch (err) {
         if (a.stopped || (err && err.code === "cancelled")) break;
         if (err && err.code === "invalid_json" && !retried) { retried = true; continue; }
@@ -1060,35 +1307,90 @@ function editable(obj, key, tag, cls) {
 let saveT = null;
 function saveSoon() { clearTimeout(saveT); saveT = setTimeout(saveCurrent, 600); }
 
+/* ---------- CV design: defaults, or the design learned from your previous CV ---------- */
+function cvStyle() {
+  const s = (profile && profile.style) || {};
+  const hex = (v, d) => (/^#[0-9a-f]{6}$/i.test(String(v || "").trim()) ? String(v).trim() : d);
+  const clamp = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.min(hi, Math.max(lo, n)) : d; };
+  const layout = ["single", "sidebar-left", "sidebar-right"].includes(s.layout) ? s.layout : "single";
+  return {
+    layout,
+    side: layout !== "single",
+    serif: s.font === "serif",
+    accent: hex(s.accent, "#2448d4"),
+    text: hex(s.text_color, "#16191f"),
+    sidebarBg: hex(s.sidebar_bg, ""),
+    nameSize: clamp(s.name_size, 14, 34, 22),
+    bodySize: clamp(s.body_size, 8.5, 12, 10.5),
+    nameAlign: s.name_align === "center" ? "center" : "left",
+    upper: s.heading_case !== "title",
+    headingStyle: ["rule-below", "plain", "filled"].includes(s.heading_style) ? s.heading_style : "rule-below",
+    contactInSidebar: layout !== "single" && s.contact_position === "sidebar",
+    datesBelow: s.date_position === "below",
+    bullet: s.bullet === "-" ? "-" : s.bullet === "none" ? "" : "•",
+    order: arr(s.section_order).map((x) => String(x).toLowerCase().trim()).filter(Boolean),
+    titles: s.section_titles || {},
+    sidebarSections: arr(s.sidebar_sections).map((x) => String(x).toLowerCase().trim()).filter(Boolean)
+  };
+}
+const titleMatch = (title, name) => { const t = String(title || "").toLowerCase().trim(); return !!t && !!name && (t === name || t.includes(name) || name.includes(t)); };
+function cvBlocks(t, st) {
+  const blocks = [];
+  if (t.summary) blocks.push({ kind: "summary", title: st.titles.summary || "Summary" });
+  if (arr(t.skills).length) blocks.push({ kind: "skills", title: st.titles.skills || "Skills" });
+  arr(t.sections).forEach((s) => blocks.push({ kind: "section", title: s.title || "", sec: s }));
+  if (st.order.length) {
+    const rank = (b) => { const i = st.order.findIndex((o) => titleMatch(b.title, o)); return i < 0 ? 999 : i; };
+    blocks.sort((a, b) => rank(a) - rank(b));
+  }
+  for (const b of blocks) b.side = st.side && (st.sidebarSections.length ? st.sidebarSections.some((o) => titleMatch(b.title, o)) : b.kind === "skills");
+  return blocks;
+}
+
 function cvPaper(t) {
-  const kids = [h("div", { class: "cv-name" }, t.name || "")];
-  if (t.headline != null) kids.push(editable(t, "headline", "div", "cv-headline"));
-  if (arr(t.contact).length) kids.push(h("div", { class: "cv-contact" }, arr(t.contact).join("  ·  ")));
-  if (t.summary) kids.push(h("h4", {}, "Summary"), editable(t, "summary", "p"));
-  if (arr(t.skills).length) kids.push(h("h4", {}, "Skills"), ...arr(t.skills).map((g) => h("p", { class: "skills-row" }, g.group ? h("b", {}, g.group + ": ") : null, arr(g.items).join(", "))));
-  for (const s of arr(t.sections)) {
-    kids.push(h("h4", {}, s.title || ""));
-    for (const e of arr(s.entries)) {
-      kids.push(h("div", { class: "cv-entry" },
-        h("div", { class: "cv-entry-head" }, editable(e, "heading", "span"), e.dates ? h("span", { class: "cv-dates" }, e.dates) : null),
+  const st = cvStyle();
+  const cls = ["cv-paper", st.serif ? "serif" : "", st.upper ? "upper" : "", "hs-" + st.headingStyle, st.side ? "sidebar " + st.layout : "", st.bullet === "-" ? "b-dash" : st.bullet === "" ? "b-none" : ""].filter(Boolean).join(" ");
+  const paper = h("article", { class: cls, "aria-label": "Tailored CV preview", style: "--p-accent:" + st.accent + ";--p-ink:" + st.text + ";--p-side:" + (st.sidebarBg || "transparent") });
+  const head = h("header", { class: "cv-head", style: "text-align:" + st.nameAlign }, h("div", { class: "cv-name" }, t.name || ""));
+  if (t.headline != null) head.append(editable(t, "headline", "div", "cv-headline"));
+  if (arr(t.contact).length && !st.contactInSidebar) head.append(h("div", { class: "cv-contact" }, arr(t.contact).join("  ·  ")));
+  paper.append(head);
+
+  const blockEls = (b) => {
+    const out = [h("h4", {}, b.title)];
+    if (b.kind === "summary") out.push(editable(t, "summary", "p"));
+    else if (b.kind === "skills") out.push(...arr(t.skills).map((g) => h("p", { class: "skills-row" }, g.group ? h("b", {}, g.group + ": ") : null, arr(g.items).join(", "))));
+    else for (const e of arr(b.sec.entries)) {
+      out.push(h("div", { class: "cv-entry" },
+        h("div", { class: "cv-entry-head" }, editable(e, "heading", "span"), e.dates && !st.datesBelow ? h("span", { class: "cv-dates" }, e.dates) : null),
+        e.dates && st.datesBelow ? h("div", { class: "cv-dates below" }, e.dates) : null,
         e.sub ? editable(e, "sub", "div", "cv-sub") : null,
-        arr(e.bullets).length ? h("ul", {}, arr(e.bullets).map((b) => {
-          const li = h("li", {}, editable(b, "text", "span", b.check ? "check" : null));
-          if (b.check) {
+        arr(e.bullets).length ? h("ul", {}, arr(e.bullets).map((bl) => {
+          const li = h("li", {}, editable(bl, "text", "span", bl.check ? "check" : null));
+          if (bl.check) {
             const rm = h("button", { type: "button", class: "check-tag", title: "Couldn't match this line to your CV word for word. Make sure it's true, or remove it." }, "check · remove");
-            rm.onclick = () => { e.bullets = arr(e.bullets).filter((x) => x !== b); t.unchecked = Math.max(0, (t.unchecked || 1) - 1); saveCurrent(); replaceSection("cv"); };
+            rm.onclick = () => { e.bullets = arr(e.bullets).filter((x) => x !== bl); recount(t); saveCurrent(); replaceSection("cv"); };
             li.append(rm);
           }
           return li;
         })) : null));
     }
-  }
-  return h("article", { class: "cv-paper", "aria-label": "Tailored CV preview" }, kids);
+    return out;
+  };
+
+  const blocks = cvBlocks(t, st);
+  if (!st.side) { blocks.forEach((b) => paper.append(...blockEls(b))); return paper; }
+  const sideCol = h("div", { class: "cv-side" });
+  const mainCol = h("div", { class: "cv-main" });
+  if (st.contactInSidebar && arr(t.contact).length) sideCol.append(h("h4", {}, st.upper ? "Contact" : "Contact"), ...arr(t.contact).map((c) => h("p", { class: "cv-contact-item" }, c)));
+  blocks.forEach((b) => (b.side ? sideCol : mainCol).append(...blockEls(b)));
+  paper.append(h("div", { class: "cv-cols" }, st.layout === "sidebar-left" ? [sideCol, mainCol] : [mainCol, sideCol]));
+  return paper;
 }
 
 async function tailorCv() {
   if (!cv) return;
-  if (!sample) { cvMsg = { text: "Open this page on claude.ai to tailor your CV.", err: true }; replaceSection("cv"); return; }
+  if (!sample) { cvMsg = { text: noAi(), err: true }; replaceSection("cv"); return; }
   const d = current.data;
   cvBusy = true; cvMsg = { text: "Tailoring your CV… about 30 to 60 seconds." }; replaceSection("cv");
   try {
@@ -1098,6 +1400,7 @@ async function tailorCv() {
     t._cvName = cv.name; t._date = Date.now();
     d.tailored_cv = t;
     saveCurrent();
+    autoExport(current.id, d, current.url);
     cvMsg = { text: "Done. Read it through before you send it." };
   } catch (err) { cvMsg = { text: errMsg(err), err: true }; }
   cvBusy = false; replaceSection("cv");
@@ -1130,71 +1433,129 @@ async function copyText(text, btn) {
   const old = btn.textContent; btn.textContent = ok ? "Copied" : "Copy failed"; setTimeout(() => { btn.textContent = old; }, 1600);
 }
 
-/* PDF made in the browser with jsPDF: a clean one-column CV. */
+/* PDF made in the browser with jsPDF, following the same design as the preview. */
 async function cvPdfBlob(t) {
   const jsPDF = await ensureJsPdf();
+  const st = cvStyle();
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 50, CW = W - 2 * M;
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 46;
+  const FONT = st.serif ? "times" : "helvetica";
+  const rgb = (hx) => [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16));
+  const INK = rgb(st.text), MUTED = [90, 97, 112], ACC = rgb(st.accent);
+  const B = st.bodySize, LH = B * 1.38;
   const clean = (s) => String(s || "").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-").replace(/[^\x20-\x7e\xa0-\xff•\n]/g, "");
-  let y = M;
-  const room = (hgt) => { if (y + hgt > H - M) { doc.addPage(); y = M; } };
-  const font = (size, style, color) => { doc.setFont("helvetica", style); doc.setFontSize(size); doc.setTextColor(...(color || [22, 25, 31])); };
-  const para = (s, size, style, color, x = M, w = CW, lh = 1.38) => {
+  const font = (size, style, color) => { doc.setFont(FONT, style); doc.setFontSize(size); doc.setTextColor(...(color || INK)); };
+  const goto = (c) => { while (doc.getNumberOfPages() < c.page) doc.addPage(); doc.setPage(c.page); };
+  const room = (c, hgt) => {
+    if (c.y + hgt > H - M) { c.page++; c.y = M; goto(c); if (c.onNewPage) c.onNewPage(c); }
+    else goto(c);
+  };
+  const para = (c, s, size, style, color, lh = 1.38, align) => {
     font(size, style, color);
-    for (const ln of doc.splitTextToSize(clean(s), w)) { room(size * lh); doc.text(ln, x, y + size * 0.85); y += size * lh; }
+    for (const ln of doc.splitTextToSize(clean(s), c.w)) {
+      room(c, size * lh); font(size, style, color);
+      if (align === "center") doc.text(ln, c.x + c.w / 2, c.y + size * 0.85, { align: "center" });
+      else doc.text(ln, c.x, c.y + size * 0.85);
+      c.y += size * lh;
+    }
   };
-  const head = (s) => {
-    y += 10; room(34);
-    font(10, "bold", [36, 72, 212]); doc.text(clean(s).toUpperCase(), M, y + 9); y += 14;
-    doc.setDrawColor(217, 221, 228); doc.setLineWidth(0.7); doc.line(M, y, W - M, y); y += 7;
+  const heading = (c, title) => {
+    c.y += 9; room(c, B * 4);
+    const txt = st.upper ? clean(title).toUpperCase() : clean(title);
+    if (st.headingStyle === "filled") {
+      doc.setFillColor(...ACC); doc.rect(c.x, c.y, c.w, B + 8, "F");
+      font(B, "bold", [255, 255, 255]); doc.text(txt, c.x + 5, c.y + B + 1.5); c.y += B + 14;
+    } else {
+      const size = st.upper ? B - 0.5 : B + 1.5;
+      font(size, "bold", ACC); doc.text(txt, c.x, c.y + size); c.y += size + 5;
+      if (st.headingStyle === "rule-below") { doc.setDrawColor(217, 221, 228); doc.setLineWidth(0.7); doc.line(c.x, c.y, c.x + c.w, c.y); }
+      c.y += 7;
+    }
   };
-  para(t.name, 22, "bold", null, M, CW, 1.15);
-  if (t.headline) para(t.headline, 11.5, "normal", [90, 97, 112]);
-  if (arr(t.contact).length) para(arr(t.contact).join("   |   "), 9.5, "normal", [90, 97, 112]);
-  if (t.summary) { head("Summary"); para(t.summary, 10.5, "normal"); }
-  if (arr(t.skills).length) {
-    head("Skills");
+  const writeSkills = (c) => {
+    const narrow = c.w < 260;
     for (const g of arr(t.skills)) {
-      font(10.5, "bold"); const label = g.group ? clean(g.group) + ": " : ""; const lw = label ? doc.getTextWidth(label) : 0;
-      font(10.5, "normal");
-      const lines = doc.splitTextToSize(clean(arr(g.items).join(", ")), CW - lw);
-      room(14.5);
-      if (label) { font(10.5, "bold"); doc.text(label, M, y + 9); }
-      font(10.5, "normal"); doc.text(lines[0] || "", M + lw, y + 9); y += 14.5;
-      for (const ln of lines.slice(1)) { room(14.5); doc.text(ln, M + lw, y + 9); y += 14.5; }
+      const items = clean(arr(g.items).join(", "));
+      if (narrow || !g.group) { if (g.group) para(c, g.group, B, "bold", INK, 1.3); para(c, items, B, "normal", INK); if (narrow) c.y += 3; continue; }
+      font(B, "bold"); const label = clean(g.group) + ": "; const lw = doc.getTextWidth(label);
+      font(B, "normal"); const lines = doc.splitTextToSize(items, c.w - lw);
+      room(c, LH); font(B, "bold"); doc.text(label, c.x, c.y + B * 0.9); font(B, "normal"); doc.text(lines[0] || "", c.x + lw, c.y + B * 0.9); c.y += LH;
+      for (const ln of lines.slice(1)) { room(c, LH); font(B, "normal"); doc.text(ln, c.x + lw, c.y + B * 0.9); c.y += LH; }
     }
-  }
-  for (const s of arr(t.sections)) {
-    head(s.title || "");
+  };
+  const writeSection = (c, s) => {
     for (const e of arr(s.entries)) {
-      room(40);
-      font(10, "normal", [90, 97, 112]); const dates = clean(e.dates); const dw = dates ? doc.getTextWidth(dates) + 12 : 0;
-      font(11, "bold"); const hl = doc.splitTextToSize(clean(e.heading), CW - dw);
-      doc.text(hl[0] || "", M, y + 9.5);
-      if (dates) { font(10, "normal", [90, 97, 112]); doc.text(dates, W - M, y + 9.5, { align: "right" }); }
-      y += 15; font(11, "bold"); for (const ln of hl.slice(1)) { room(15); doc.text(ln, M, y + 9.5); y += 15; }
-      if (e.sub) para(e.sub, 10, "italic", [90, 97, 112]);
-      for (const b of arr(e.bullets).filter((x) => String(x.text || "").trim())) {
-        font(10.5, "normal");
-        const lines = doc.splitTextToSize(clean(b.text), CW - 14);
-        lines.forEach((ln, i) => { room(14.5); if (i === 0) doc.text("•", M + 3, y + 9); doc.text(ln, M + 14, y + 9); y += 14.5; });
+      room(c, B * 3.2);
+      const dates = clean(e.dates);
+      const inline = !!dates && !st.datesBelow && c.w > 260;
+      font(B - 0.5, "normal", MUTED); const dw = inline ? doc.getTextWidth(dates) + 12 : 0;
+      font(B + 0.5, "bold"); const hl = doc.splitTextToSize(clean(e.heading), c.w - dw);
+      hl.forEach((ln, i) => {
+        room(c, LH + 1); font(B + 0.5, "bold"); doc.text(ln, c.x, c.y + B);
+        if (i === 0 && inline) { font(B - 0.5, "normal", MUTED); doc.text(dates, c.x + c.w, c.y + B, { align: "right" }); }
+        c.y += LH + 1;
+      });
+      if (dates && !inline) para(c, dates, B - 0.5, "normal", MUTED);
+      if (e.sub) para(c, e.sub, B - 0.5, "italic", MUTED);
+      const ind = st.bullet ? 12 : 0;
+      for (const bl of arr(e.bullets).filter((x) => String(x.text || "").trim())) {
+        font(B, "normal");
+        doc.splitTextToSize(clean(bl.text), c.w - ind).forEach((ln, i) => {
+          room(c, LH); font(B, "normal");
+          if (i === 0 && st.bullet) doc.text(st.bullet, c.x + 2, c.y + B * 0.9);
+          doc.text(ln, c.x + ind, c.y + B * 0.9); c.y += LH;
+        });
       }
-      y += 6;
+      c.y += 5;
     }
+  };
+  const writeBlock = (c, b) => {
+    heading(c, b.title);
+    if (b.kind === "summary") para(c, t.summary, B, "normal");
+    else if (b.kind === "skills") writeSkills(c);
+    else writeSection(c, b.sec);
+  };
+
+  const full = { x: M, w: W - 2 * M, y: M, page: 1 };
+  para(full, t.name, st.nameSize, "bold", INK, 1.15, st.nameAlign);
+  if (t.headline) para(full, t.headline, B + 1, "normal", MUTED, 1.35, st.nameAlign);
+  if (arr(t.contact).length && !st.contactInSidebar) para(full, arr(t.contact).join("   |   "), B - 1, "normal", MUTED, 1.35, st.nameAlign);
+  full.y += 4;
+
+  const blocks = cvBlocks(t, st);
+  if (!st.side) { blocks.forEach((b) => writeBlock(full, b)); return doc.output("blob"); }
+
+  const SW = Math.round((W - 2 * M) * 0.31), GAP = 20;
+  const left = st.layout === "sidebar-left";
+  const sideCol = { x: left ? M : W - M - SW, w: SW, y: full.y + 2, page: 1 };
+  const mainCol = { x: left ? M + SW + GAP : M, w: W - 2 * M - SW - GAP, y: full.y + 2, page: 1 };
+  if (st.sidebarBg) {
+    const paint = (c) => { const top = c.page === 1 ? c.y - 4 : M - 14; doc.setFillColor(...rgb(st.sidebarBg)); doc.rect(c.x - 8, top, c.w + 16, H - top - M + 14, "F"); };
+    paint(sideCol); sideCol.onNewPage = paint;
   }
+  if (st.contactInSidebar && arr(t.contact).length) { heading(sideCol, "Contact"); arr(t.contact).forEach((ct) => para(sideCol, ct, B - 0.5, "normal")); }
+  blocks.filter((b) => b.side).forEach((b) => writeBlock(sideCol, b));
+  blocks.filter((b) => !b.side).forEach((b) => writeBlock(mainCol, b));
   return doc.output("blob");
 }
 
 let downloadsNS = null, downloadsAvail = null;
+function saveBlobLocal(name, blob) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
 async function downloadCv(t, btn) {
   const old = btn.textContent; btn.disabled = true; btn.textContent = "Preparing…";
   const show = (m, err) => { const s = document.querySelector('[data-sec="cv"] .status'); if (s) { s.textContent = m; s.classList.toggle("error", !!err); } };
   try {
-    if (!downloadsNS) { show("Downloads aren't available in this view. Use Copy text instead.", true); return; }
+    if (!downloadsNS && inClaude) { show("Downloads aren't available in this view. Use Copy text instead.", true); return; }
     const blob = await cvPdfBlob(t);
     const d = current.data;
     const name = ("CV - " + [t.name, d.company, d.title].filter(Boolean).join(" - ")).replace(/[\\/:*?"<>|]+/g, " ").slice(0, 120) + ".pdf";
-    await downloadsNS.save({ filename: name, data: blob });
+    if (downloadsNS) await downloadsNS.save({ filename: name, data: blob });
+    else saveBlobLocal(name, blob);
     show("Saved " + name + ".");
   } catch (err) {
     const c = err && err.code;
@@ -1221,7 +1582,22 @@ function render(d, meta) {
   const jump = h("a", { href: "#" }, d.tailored_cv ? "Tailored CV ↓" : "Tailor your CV ↓");
   jump.onclick = (e) => { e.preventDefault(); const s = document.querySelector('[data-sec="cv"]'); if (s) s.scrollIntoView({ behavior: "smooth" }); };
   metaBits.push(jump);
-  brief.append(h("div", { class: "head" }, h("h1", {}, d.title || "Job analysis"), h("div", { class: "meta" }, metaBits)));
+  const head = h("div", { class: "head" }, h("h1", {}, d.title || "Job analysis"), h("div", { class: "meta" }, metaBits));
+  if (FS_OK && !meta.example) {
+    const sb = h("button", { type: "button", class: "small" }, "Save to folder");
+    const ss = h("span", { class: "status", role: "status" });
+    sb.onclick = async () => {
+      if (!baseDir) { await pickFolder(); if (!baseDir) return; }
+      ss.classList.remove("error"); ss.textContent = "Saving…";
+      try {
+        const r = await exportJob(current.id, current.data, current.url, true);
+        ss.textContent = r.ok ? "Saved to " + baseDir.name + "/" + r.folder + " (" + r.files.length + " files)" : "Couldn't save: permission not given.";
+        ss.classList.toggle("error", !r.ok);
+      } catch (e) { ss.textContent = "Couldn't save: " + ((e && e.message) || e); ss.classList.add("error"); }
+    };
+    head.append(h("div", { class: "tools" }, sb, ss));
+  }
+  brief.append(head);
 
   if (d.fit && d.fit.score != null) {
     brief.append(h("div", { class: "fit" },
@@ -1280,20 +1656,247 @@ $("skills").addEventListener("change", () => store.set("jobprep.skills", $("skil
 $("days").value = clampDays(store.get("jobprep.days", 5));
 $("days").addEventListener("change", () => { $("days").value = clampDays($("days").value); store.set("jobprep.days", Number($("days").value)); });
 
-/* Claude */
+/* =====================================================================
+   AI CONNECTION
+   On claude.ai the page uses claude.ai's built-in Claude (your plan).
+   Anywhere else (GitHub Pages, localhost) it calls your own small server
+   (worker/worker.js), which keeps your Anthropic API key secret.
+   Both look the same to the rest of the code: sample(prompt), sample.json(prompt).
+   ===================================================================== */
+const inClaude = !!(window.claude && window.claude.use);
+const SETTINGS_KEY = "jobprep.settings.v1";
+let settings = Object.assign({ workerUrl: "", token: "", autoSave: true }, store.get(SETTINGS_KEY, {}));
+const saveSettings = () => store.set(SETTINGS_KEY, settings);
+const noAi = () => inClaude ? "Claude isn't available in this view." : "Connect your AI server first (Setup, in the left panel).";
+
+function parseJsonLoose(text) {
+  let t = String(text || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+  const i = t.search(/[[{]/);
+  if (i > 0) t = t.slice(i);
+  try { return JSON.parse(t); } catch {}
+  const j = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
+  try { return JSON.parse(t.slice(0, j + 1)); } catch { throw { code: "invalid_json" }; }
+}
+async function blobToImage(b) {
+  const buf = new Uint8Array(await b.arrayBuffer());
+  let s = "";
+  for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return { media_type: b.type || "image/png", data: btoa(s) };
+}
+function makeServerClient(baseUrl, token) {
+  async function call(prompt, opts = {}) {
+    let res;
+    try {
+      res = await fetch(baseUrl.replace(/\/+$/, "") + "/v1/complete", {
+        method: "POST",
+        headers: Object.assign({ "content-type": "application/json" }, token ? { authorization: "Bearer " + token } : {}),
+        body: JSON.stringify({ prompt, images: opts.images ? await Promise.all(opts.images.map(blobToImage)) : undefined }),
+        signal: opts.signal
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "server_unreachable" };
+    }
+    if (res.status === 401 || res.status === 403) throw { code: "server_denied" };
+    if (res.status === 429) throw { code: "rate_limited" };
+    if (!res.ok) throw { code: "server_error" };
+    const j = await res.json().catch(() => ({}));
+    if (!j.text) throw { code: "empty_completion" };
+    return j.text;
+  }
+  const client = async (prompt, opts) => ({ text: await call(prompt, opts), truncated: false });
+  client.json = async (prompt, opts) => parseJsonLoose(await call(prompt + "\n\nReply with the JSON only, no other text.", opts));
+  client.limits = async () => ({ images: true });
+  return client;
+}
+
 let sample = null;
 let ctl = null;
 const status = (msg, err) => { $("status").textContent = msg; $("status").classList.toggle("error", !!err); };
 
-if (window.claude && window.claude.use) {
+function connectServer() {
+  sample = settings.workerUrl ? makeServerClient(settings.workerUrl, settings.token) : null;
+  $("go").disabled = !sample;
+  status(sample ? "" : noAi(), !sample);
+  $("aiState").textContent = settings.workerUrl ? "· set up" : "· not set up";
+}
+
+if (inClaude) {
   window.claude.use("sample").then((s) => {
     sample = s;
-    if (!s) { $("go").disabled = true; status("Open this page on claude.ai to analyze jobs.", true); }
+    if (!s) { $("go").disabled = true; status(noAi(), true); }
   });
 } else {
-  $("go").disabled = true;
-  status("Open this page on claude.ai to analyze jobs.", true);
+  $("usageNote").textContent = "Uses your own Claude API key, through your server.";
+  $("setupPanel").hidden = false;
+  $("workerUrl").value = settings.workerUrl;
+  $("workerToken").value = settings.token;
+  $("aiDetails").open = !settings.workerUrl;
+  connectServer();
+  $("aiSave").onclick = async () => {
+    settings.workerUrl = $("workerUrl").value.trim();
+    settings.token = $("workerToken").value.trim();
+    saveSettings();
+    connectServer();
+    const st = $("aiStatus");
+    st.classList.remove("error");
+    if (!sample) { st.textContent = "Enter your server URL."; st.classList.add("error"); return; }
+    st.textContent = "Testing…";
+    try {
+      const r = await sample.json('Reply with this JSON: {"ok": true}');
+      st.textContent = r && r.ok ? "Connected. Claude answered." : "Connected, but the reply was unexpected. It should still work.";
+    } catch (e) { st.textContent = errMsg(e); st.classList.add("error"); }
+  };
 }
+
+/* =====================================================================
+   JOB FOLDERS (standalone version, Chrome or Edge)
+   You choose a base folder once; each job gets its own folder inside it
+   with the job brief, the posting, the tailored CV (PDF + text) and the
+   CV agent's steps. The folder handle is remembered in IndexedDB.
+   ===================================================================== */
+const FS_OK = !inClaude && "showDirectoryPicker" in window && window.isSecureContext;
+let baseDir = null;
+
+function idbReq(mode, fn) {
+  return new Promise((res, rej) => {
+    const open = indexedDB.open("jobprep", 1);
+    open.onupgradeneeded = () => open.result.createObjectStore("kv");
+    open.onerror = () => rej(open.error);
+    open.onsuccess = () => {
+      const tx = open.result.transaction("kv", mode);
+      const r = fn(tx.objectStore("kv"));
+      tx.oncomplete = () => res(r && r.result);
+      tx.onerror = () => rej(tx.error);
+    };
+  });
+}
+const idbGet = (k) => idbReq("readonly", (s) => s.get(k));
+const idbSet = (k, v) => idbReq("readwrite", (s) => s.put(v, k));
+
+async function folderPermission(ask) {
+  if (!baseDir) return false;
+  try {
+    if ((await baseDir.queryPermission({ mode: "readwrite" })) === "granted") return true;
+    return ask ? (await baseDir.requestPermission({ mode: "readwrite" })) === "granted" : false;
+  } catch { return false; }
+}
+const folderStatus = (m, err) => { $("folderStatus").textContent = m; $("folderStatus").classList.toggle("error", !!err); };
+
+async function renderFolderUI() {
+  if (!FS_OK) {
+    $("folderInfo").replaceChildren(h("p", { class: "note" }, inClaude
+      ? "Saving each job into its own folder works in the standalone version of this app (from GitHub Pages, in Chrome or Edge)."
+      : "This browser can't save into folders. Use Chrome or Edge."));
+    $("folderPick").hidden = true; $("folderReconnect").hidden = true; $("autoSaveRow").hidden = true;
+    return;
+  }
+  const granted = await folderPermission(false);
+  $("folderInfo").replaceChildren(baseDir
+    ? h("div", {}, "📁 " + baseDir.name, h("span", {}, granted ? "Each job gets its own folder inside it." : "Click Reconnect to allow saving (browsers ask again after a reload)."))
+    : h("p", { class: "note" }, "Choose where job folders go. Each job gets its own folder there with the job brief, the posting and your tailored CV."));
+  $("folderPick").textContent = baseDir ? "Change folder" : "Choose folder";
+  $("folderReconnect").hidden = !baseDir || granted;
+  $("autoSave").checked = !!settings.autoSave;
+}
+async function pickFolder() {
+  try {
+    const hnd = await window.showDirectoryPicker({ id: "jobprep", mode: "readwrite" });
+    baseDir = hnd;
+    await idbSet("baseDir", hnd);
+    folderStatus("Job folders will go in " + hnd.name + ".");
+  } catch (e) {
+    if (!e || e.name !== "AbortError") folderStatus("Couldn't use that folder.", true);
+  }
+  renderFolderUI();
+}
+$("folderPick").onclick = pickFolder;
+$("folderReconnect").onclick = async () => { const ok = await folderPermission(true); folderStatus(ok ? "Reconnected." : "Permission not given.", !ok); renderFolderUI(); };
+$("autoSave").onchange = () => { settings.autoSave = $("autoSave").checked; saveSettings(); };
+if (FS_OK) idbGet("baseDir").then((hnd) => { baseDir = hnd || null; renderFolderUI(); }).catch(() => renderFolderUI());
+else renderFolderUI();
+
+const safeName = (s) => String(s || "").replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+const jobUrl = (id) => ((store.get(HKEY, []).find((x) => x.id === id) || {}).url) || "";
+async function writeFile(dir, name, data) {
+  const fh = await dir.getFileHandle(name, { create: true });
+  const w = await fh.createWritable();
+  await w.write(data);
+  await w.close();
+}
+async function exportJob(id, data, url, ask) {
+  if (!FS_OK || !baseDir) return { ok: false, why: "no_folder" };
+  if (!(await folderPermission(ask))) return { ok: false, why: "permission" };
+  if (!data._folder) {
+    const date = new Date(Number(id) || Date.now()).toISOString().slice(0, 10);
+    data._folder = safeName([data.company, data.title].filter(Boolean).join(" - ") || "Job") + " (" + date + ")";
+    saveJob(id, data);
+  }
+  const dir = await baseDir.getDirectoryHandle(data._folder, { create: true });
+  const files = ["job-brief.md"];
+  await writeFile(dir, "job-brief.md", jobBriefMd(data, url));
+  if (data._posting) { await writeFile(dir, "job-posting.txt", data._posting); files.push("job-posting.txt"); }
+  const t = data.tailored_cv;
+  if (t) {
+    const pdfName = "CV - " + safeName(t.name || "me") + " - " + safeName(data.company || data.title || "job") + ".pdf";
+    await writeFile(dir, pdfName, await cvPdfBlob(t));
+    await writeFile(dir, "cv.txt", cvPlain(t));
+    files.push(pdfName, "cv.txt");
+    if (arr(t._trace).length) { await writeFile(dir, "cv-agent-steps.md", traceMd(t._trace)); files.push("cv-agent-steps.md"); }
+  }
+  return { ok: true, folder: data._folder, files };
+}
+async function autoExport(id, data, url) {
+  if (!FS_OK || !baseDir || !settings.autoSave || !id) return;
+  try {
+    const r = await exportJob(id, data, url, false);
+    folderStatus(r.ok ? "Saved to " + baseDir.name + "/" + r.folder : "Couldn't save automatically. Click Reconnect.", !r.ok);
+    if (!r.ok) renderFolderUI();
+  } catch { folderStatus("Couldn't save to the folder.", true); }
+}
+
+function jobBriefMd(d, url) {
+  const L = ["# " + (d.title || "Job") + (d.company ? " — " + d.company : ""), ""];
+  const meta = [d.location, d.level].filter(Boolean).join(" · ");
+  if (meta) L.push(meta);
+  if (url) L.push("Posting: " + url);
+  L.push("Saved: " + new Date().toLocaleString(), "");
+  if (d.fit && d.fit.score != null) L.push("**Fit: " + d.fit.score + "/10.** " + (d.fit.note || ""), "");
+  if (d.summary) L.push("## Summary", "", d.summary, "");
+  if (arr(d.red_flags).length) L.push("## Red flags", "", ...d.red_flags.map((x) => "- " + x), "");
+  if (d.company_notes) L.push("## Notes from the company", "", d.company_notes, "");
+  if (arr(d.focus_areas).length) L.push("### What they told you to focus on", "", ...d.focus_areas.map((x) => "- " + x), "");
+  if (arr(d.responsibilities).length) L.push("## What you'd do", "", ...d.responsibilities.map((x) => "- " + x), "");
+  const sk = (list) => arr(list).map((s) => "- **" + s.skill + "** (" + (PILL[s.you] || "Gap") + ")" + (s.why ? ": " + s.why : ""));
+  L.push("## Knowledge they want", "", "### Must have", "", ...sk(d.must_have), "", "### Nice to have", "", ...sk(d.nice_to_have), "");
+  if (arr(d.interview_format).length) L.push("## Likely interview process", "", ...d.interview_format.map((x, i) => (i + 1) + ". " + x), "");
+  if (arr(d.leetcode).length) {
+    L.push("## LeetCode practice", "", "| Problem | Level | Pattern | Why |", "|---|---|---|---|");
+    for (const p of d.leetcode) L.push("| [" + p.name + "](https://leetcode.com/problems/" + (p.slug || "") + "/) | " + (p.difficulty || "") + " | " + (p.pattern || "") + " | " + String(p.why || "").replace(/\|/g, "/") + " |");
+    L.push("");
+  }
+  if (arr(d.topics).length) { L.push("## Technical questions to prepare", ""); for (const t of d.topics) L.push("### " + t.topic, "", ...arr(t.questions).map((q) => "- " + q), ""); }
+  if (arr(d.behavioral).length) L.push("## Personal questions", "", ...d.behavioral.map((x) => "- " + x), "");
+  if (arr(d.plan).length) { L.push("## Study plan", ""); d.plan.forEach((p, i) => L.push("### " + (p.day || "Day " + (i + 1)) + ": " + (p.focus || ""), "", ...arr(p.tasks).map((x) => "- " + x), "")); }
+  const t = d.tailored_cv;
+  if (t) {
+    L.push("## Tailored CV", "", "Saved in this folder as a PDF and as cv.txt.", "");
+    if (arr(t.gaps).length) L.push("### The job wants, your CV doesn't show", "", ...t.gaps.map((g) => "- **" + g.skill + "**" + (g.tip ? ": " + g.tip : "")), "");
+    if (arr(t.changes).length) L.push("### What changed", "", ...t.changes.map((c) => "- " + c), "");
+  }
+  return L.join("\n");
+}
+function traceMd(trace) {
+  const L = ["# How the CV agent built this CV", ""];
+  trace.forEach((s, i) => {
+    L.push((i + 1) + ". **" + s.tool + "**" + (s.ms ? " _(" + (s.ms / 1000).toFixed(1) + "s)_" : "") + (s.error ? " ⚠" : ""));
+    if (s.thought) L.push("   - Thought: " + s.thought);
+    if (s.args) L.push("   - Input: " + s.args);
+    if (s.result) L.push("   - Result: " + s.result);
+  });
+  return L.join("\n") + "\n";
+}
+
 
 function buildPrompt(text, url, skills, days) {
   return `You help an entry-level software engineer in Israel understand a job posting and prepare for the interview.
@@ -1354,6 +1957,7 @@ $("form").addEventListener("submit", async (e) => {
   try {
     const data = await sample.json(buildPrompt(text.slice(0, 30000), url, $("skills").value.trim(), days), { signal: ctl.signal });
     if (!data || typeof data !== "object") throw { code: "invalid_json" };
+    data._posting = text;
     const id = String(Date.now());
     const list = store.get(HKEY, []);
     list.unshift({ id, date: Date.now(), url, data });
@@ -1361,6 +1965,7 @@ $("form").addEventListener("submit", async (e) => {
     render(data, { url, id });
     renderHistory();
     status("Done. Saved to your list.");
+    autoExport(id, data, url);
   } catch (err) {
     const code = err && err.code;
     if (code === "cancelled") { status("Stopped."); render(structuredClone(EXAMPLE), { example: true }); }
@@ -1376,6 +1981,7 @@ $("form").addEventListener("submit", async (e) => {
 render(structuredClone(EXAMPLE), { example: true });
 renderHistory();
 renderCvPanel();
+renderProfileInfo();
 if (window.claude && window.claude.use) {
   window.claude.use("downloads").then((ns) => { downloadsNS = ns; downloadsAvail = !!ns; replaceSection("cv"); });
 }

@@ -11,6 +11,8 @@ A single-page tool for preparing for software job interviews. Paste a job postin
 - **Tailored CV**: upload your CV as a PDF and get a version tailored to each job, based only on your real experience
 - **CV agent**: an AI agent that asks you about unclear points in your CV, writes a draft, checks itself and fixes what fails (see below)
 - **Saved analyses**, kept in your browser (`localStorage`)
+- **Previous CV**: your old CV teaches the app your preferred format and design, and adds facts about you
+- **Job folders**: each job gets its own folder on your computer with the brief, the posting and the tailored CV (standalone version)
 
 ## Honest CV tailoring
 
@@ -48,14 +50,71 @@ Design choices:
 - **Context management.** Full tool results for the last 3 steps, one-line summaries for older ones.
 - **Observability.** Every step (thought, tool, arguments, result, duration) is shown live in a trace panel and saved with the CV.
 
+## Your previous CV
+
+Upload a CV you've used before (Your CV → Previous CV). The page:
+
+- reads its text: everything in it counts as true facts about you, so the honesty check accepts lines based on it;
+- learns its **format** (section order and titles, headline and bullet style, length), which the agents follow;
+- learns its **design** from an image of page 1 plus font measurements (font family, accent color, single column or sidebar, heading style, bullet style). The preview and the PDF follow it.
+
+The PDF uses standard fonts (a sans-serif or Times), so it gets close to the original design rather than copying it exactly.
+
+## Job folders (standalone version)
+
+Choose a base folder once (Job folders → Choose folder). Each job gets its own folder inside it:
+
+```
+Acme Chips - Junior Firmware Engineer (2026-11-23)/
+├── job-brief.md          analysis, interview prep, LeetCode, study plan, notes
+├── job-posting.txt       the posting you pasted
+├── CV - <name> - Acme Chips.pdf
+├── cv.txt
+└── cv-agent-steps.md     every step the CV agent took
+```
+
+With "Save each job automatically" on, folders update after each analysis and each tailored CV. This uses the browser's File System Access API, so it works in **Chrome or Edge**, not inside claude.ai.
+
+## Repository layout
+
+```
+index.html            the app: UI, agent loop, tools, guardrails, PDF reading and writing
+agents/cv-agent.md    the CV agent's instructions; limits (max_steps, max_questions) in the header
+worker/worker.js      tiny server for the standalone version; keeps the API key secret
+```
+
+The agent's `.md` file holds the rules; the code fills in the live state (`{{cv}}`, `{{draft}}`, `{{history}}`, …) on every turn. To change how the agent behaves, edit the `.md` file.
+
 ## Running it
 
-It's one self-contained file: `index.html`.
+### On claude.ai
 
-The AI features use the Claude artifact runtime (`window.claude.use("sample")` and `window.claude.use("downloads")`), so **analysis, tailoring and PDF download only work when the page is opened as an artifact on claude.ai**. Opened anywhere else (locally or on GitHub Pages), the page loads and shows the example briefing, but the buttons that call Claude are disabled.
+Open the page as a Claude artifact. AI calls go through claude.ai and your Claude plan; nothing to set up. Folder export isn't available there (downloads only).
 
-To run it outside claude.ai, replace the `sample.json(prompt)` calls with calls to your own backend or the Claude API, and replace `downloadsNS.save(...)` with a normal browser download.
+### Standalone (GitHub Pages)
+
+1. **Get an API key** at console.anthropic.com (API usage is billed separately from a Claude plan; personal use is usually cents a day).
+2. **Deploy the server** on Cloudflare (free plan):
+   - Cloudflare dashboard → Workers & Pages → Create → Worker → name it (e.g. `job-prep`) → Deploy.
+   - Edit code → replace everything with `worker/worker.js` → Deploy.
+   - Settings → Variables and Secrets:
+     - `ANTHROPIC_API_KEY` (secret): your API key
+     - `APP_TOKEN` (secret): any long random string
+     - `ALLOWED_ORIGINS` (text): `https://bengioliron.github.io` (add `http://localhost:8000` for local testing)
+3. **Open the site** at https://bengioliron.github.io/job-prep-desk/ in Chrome or Edge → Setup → paste the Worker URL and your `APP_TOKEN` → Save and test.
+
+Your data (jobs, CVs, answers) stays in your browser's storage and your chosen folder. The server only forwards prompts to the Claude API.
+
+### Locally
+
+`index.html` loads `agents/cv-agent.md` with `fetch`, which browsers block for `file://` pages, so serve the folder:
+
+```
+python3 -m http.server 8000
+```
+
+then open http://localhost:8000.
 
 ## Tech
 
-Plain HTML, CSS and JavaScript. No build step, no framework.
+Plain HTML, CSS and JavaScript. No build step, no framework. PDF reading: [pdf.js](https://mozilla.github.io/pdf.js/). PDF writing: [jsPDF](https://github.com/parallax/jsPDF).
