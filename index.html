@@ -432,6 +432,18 @@ td .why { color: var(--muted); font-size: 13px; }
 .link-box input[type=url] { font-size: 16px; padding: 12px 14px; }
 .notice { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--medium-soft); color: var(--ink); font-size: 14px; }
 .text-toggle { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; font-size: 14px; text-decoration: underline; }
+/* LeetCode focus + solved */
+.lc-focus { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13.5px; }
+.focus-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px; }
+.focus-chip i { font-style: normal; font-size: 8px; letter-spacing: 1px; opacity: .8; }
+.solve-btn { font: inherit; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); white-space: nowrap; cursor: pointer; }
+.solve-btn:hover { color: var(--ink); border-color: var(--easy); }
+.solve-btn.on { background: var(--easy-soft); color: var(--easy); border-color: transparent; }
+tr.solved td:not(:last-child) { opacity: .55; }
+tr.solved td a { text-decoration: line-through; }
+.solved-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.solved-list .chip-x { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 10px; border-radius: 99px; background: var(--easy-soft); color: var(--easy); font-size: 13px; font-weight: 600; }
+.solved-list .chip-x button { border: 0; background: none; color: inherit; padding: 0 4px; font-size: 13px; cursor: pointer; }
 /* Profile */
 .facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .facts li { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
@@ -562,6 +574,11 @@ const EXAMPLE = {
     "Home assignment or live debugging of a small driver",
     "Final meeting with the team lead"
   ],
+  practice_focus: [
+    { topic: "bits", weight: 3, why: "Drivers configure hardware by setting register bits." },
+    { topic: "linked-list", weight: 2, why: "Pointer handling in C." },
+    { topic: "design", weight: 2, why: "UART drivers use ring buffers." }
+  ],
   leetcode: [
     { name: "Number of 1 Bits", slug: "number-of-1-bits", difficulty: "Easy", pattern: "Bit manipulation", why: "Classic warm-up for embedded interviews." },
     { name: "Reverse Bits", slug: "reverse-bits", difficulty: "Easy", pattern: "Bit manipulation", why: "Tests shifting and masking." },
@@ -649,28 +666,340 @@ Nice-to-have skills: ${arr(d.nice_to_have).map((s) => s.skill).join(", ")}
 Interview topics: ${arr(d.topics).map((t) => t.topic).join(", ")}`;
 }
 
+/* =====================================================================
+   LEETCODE: a real catalog, and the problems you've solved
+   Step 1 (inside the job analysis): Claude decides which topics this job's
+   coding interview is likely to test, each with a weight and a reason.
+   Step 2: the page builds a pool from the catalog below, leaving out
+   problems you've solved or already have, and Claude picks only from it,
+   tying each pick to the job. No invented problems, no broken links.
+   ===================================================================== */
+const LC_TOPICS = {
+  "arrays": "Arrays & hashing", "two-pointers": "Two pointers", "sliding-window": "Sliding window",
+  "stack": "Stack", "binary-search": "Binary search", "linked-list": "Linked lists", "trees": "Trees",
+  "tries": "Tries", "heap": "Heaps & priority queues", "backtracking": "Backtracking", "graphs": "Graphs",
+  "advanced-graphs": "Shortest paths & MST", "union-find": "Union-find", "dp": "Dynamic programming",
+  "greedy": "Greedy", "intervals": "Intervals", "math-matrix": "Math & matrices", "bits": "Bit manipulation",
+  "strings": "Strings & parsing", "design": "Data structure design", "systems": "Scheduling & systems",
+  "concurrency": "Concurrency", "randomized": "Sampling & streams"
+};
+/* slug|title|difficulty (E/M/H)|topics. Free problems only. */
+const LC_RAW = `two-sum|Two Sum|E|arrays
+contains-duplicate|Contains Duplicate|E|arrays
+valid-anagram|Valid Anagram|E|arrays,strings
+group-anagrams|Group Anagrams|M|arrays,strings
+top-k-frequent-elements|Top K Frequent Elements|M|arrays,heap
+product-of-array-except-self|Product of Array Except Self|M|arrays
+valid-sudoku|Valid Sudoku|M|arrays,math-matrix
+longest-consecutive-sequence|Longest Consecutive Sequence|M|arrays,union-find
+majority-element|Majority Element|E|arrays
+merge-sorted-array|Merge Sorted Array|E|arrays,two-pointers
+remove-duplicates-from-sorted-array|Remove Duplicates from Sorted Array|E|arrays,two-pointers
+rotate-array|Rotate Array|M|arrays
+move-zeroes|Move Zeroes|E|arrays,two-pointers
+sort-colors|Sort Colors|M|arrays,two-pointers
+subarray-sum-equals-k|Subarray Sum Equals K|M|arrays
+next-permutation|Next Permutation|M|arrays
+first-missing-positive|First Missing Positive|H|arrays
+find-the-duplicate-number|Find the Duplicate Number|M|arrays,linked-list
+best-time-to-buy-and-sell-stock|Best Time to Buy and Sell Stock|E|arrays,sliding-window
+maximum-subarray|Maximum Subarray|M|arrays,dp
+insert-delete-getrandom-o1|Insert Delete GetRandom O(1)|M|design,randomized
+valid-palindrome|Valid Palindrome|E|two-pointers,strings
+two-sum-ii-input-array-is-sorted|Two Sum II - Input Array Is Sorted|M|two-pointers
+3sum|3Sum|M|two-pointers
+container-with-most-water|Container With Most Water|M|two-pointers
+trapping-rain-water|Trapping Rain Water|H|two-pointers,stack
+longest-substring-without-repeating-characters|Longest Substring Without Repeating Characters|M|sliding-window,strings
+longest-repeating-character-replacement|Longest Repeating Character Replacement|M|sliding-window,strings
+permutation-in-string|Permutation in String|M|sliding-window,strings
+find-all-anagrams-in-a-string|Find All Anagrams in a String|M|sliding-window,strings
+minimum-window-substring|Minimum Window Substring|H|sliding-window,strings
+sliding-window-maximum|Sliding Window Maximum|H|sliding-window,heap
+sliding-window-median|Sliding Window Median|H|sliding-window,heap,randomized
+valid-parentheses|Valid Parentheses|E|stack,strings
+min-stack|Min Stack|M|stack,design
+evaluate-reverse-polish-notation|Evaluate Reverse Polish Notation|M|stack,strings
+generate-parentheses|Generate Parentheses|M|stack,backtracking
+daily-temperatures|Daily Temperatures|M|stack
+car-fleet|Car Fleet|M|stack
+largest-rectangle-in-histogram|Largest Rectangle in Histogram|H|stack
+asteroid-collision|Asteroid Collision|M|stack,systems
+online-stock-span|Online Stock Span|M|stack,design
+decode-string|Decode String|M|stack,strings
+simplify-path|Simplify Path|M|stack,strings,systems
+basic-calculator|Basic Calculator|H|stack,strings
+basic-calculator-ii|Basic Calculator II|M|stack,strings
+exclusive-time-of-functions|Exclusive Time of Functions|M|stack,systems
+binary-search|Binary Search|E|binary-search
+search-insert-position|Search Insert Position|E|binary-search
+search-a-2d-matrix|Search a 2D Matrix|M|binary-search,math-matrix
+koko-eating-bananas|Koko Eating Bananas|M|binary-search
+capacity-to-ship-packages-within-d-days|Capacity To Ship Packages Within D Days|M|binary-search,systems
+find-minimum-in-rotated-sorted-array|Find Minimum in Rotated Sorted Array|M|binary-search
+search-in-rotated-sorted-array|Search in Rotated Sorted Array|M|binary-search
+find-peak-element|Find Peak Element|M|binary-search
+time-based-key-value-store|Time Based Key-Value Store|M|binary-search,design,systems
+median-of-two-sorted-arrays|Median of Two Sorted Arrays|H|binary-search
+reverse-linked-list|Reverse Linked List|E|linked-list
+merge-two-sorted-lists|Merge Two Sorted Lists|E|linked-list
+linked-list-cycle|Linked List Cycle|E|linked-list,two-pointers
+middle-of-the-linked-list|Middle of the Linked List|E|linked-list,two-pointers
+palindrome-linked-list|Palindrome Linked List|E|linked-list
+intersection-of-two-linked-lists|Intersection of Two Linked Lists|E|linked-list
+reorder-list|Reorder List|M|linked-list
+remove-nth-node-from-end-of-list|Remove Nth Node From End of List|M|linked-list,two-pointers
+copy-list-with-random-pointer|Copy List with Random Pointer|M|linked-list
+add-two-numbers|Add Two Numbers|M|linked-list,math-matrix
+odd-even-linked-list|Odd Even Linked List|M|linked-list
+rotate-list|Rotate List|M|linked-list
+flatten-a-multilevel-doubly-linked-list|Flatten a Multilevel Doubly Linked List|M|linked-list
+lru-cache|LRU Cache|M|design,linked-list,systems
+lfu-cache|LFU Cache|H|design,systems
+merge-k-sorted-lists|Merge k Sorted Lists|H|linked-list,heap
+reverse-nodes-in-k-group|Reverse Nodes in k-Group|H|linked-list
+invert-binary-tree|Invert Binary Tree|E|trees
+maximum-depth-of-binary-tree|Maximum Depth of Binary Tree|E|trees
+diameter-of-binary-tree|Diameter of Binary Tree|E|trees
+balanced-binary-tree|Balanced Binary Tree|E|trees
+same-tree|Same Tree|E|trees
+symmetric-tree|Symmetric Tree|E|trees
+binary-tree-inorder-traversal|Binary Tree Inorder Traversal|E|trees,stack
+subtree-of-another-tree|Subtree of Another Tree|E|trees
+lowest-common-ancestor-of-a-binary-search-tree|Lowest Common Ancestor of a Binary Search Tree|M|trees
+lowest-common-ancestor-of-a-binary-tree|Lowest Common Ancestor of a Binary Tree|M|trees
+binary-tree-level-order-traversal|Binary Tree Level Order Traversal|M|trees
+binary-tree-zigzag-level-order-traversal|Binary Tree Zigzag Level Order Traversal|M|trees
+binary-tree-right-side-view|Binary Tree Right Side View|M|trees
+count-good-nodes-in-binary-tree|Count Good Nodes in Binary Tree|M|trees
+validate-binary-search-tree|Validate Binary Search Tree|M|trees
+kth-smallest-element-in-a-bst|Kth Smallest Element in a BST|M|trees
+path-sum-ii|Path Sum II|M|trees,backtracking
+construct-binary-tree-from-preorder-and-inorder-traversal|Construct Binary Tree from Preorder and Inorder Traversal|M|trees
+binary-tree-maximum-path-sum|Binary Tree Maximum Path Sum|H|trees,dp
+serialize-and-deserialize-binary-tree|Serialize and Deserialize Binary Tree|H|trees,design,strings
+flatten-nested-list-iterator|Flatten Nested List Iterator|M|design,stack
+peeking-iterator|Peeking Iterator|M|design
+implement-trie-prefix-tree|Implement Trie (Prefix Tree)|M|tries,design
+design-add-and-search-words-data-structure|Design Add and Search Words Data Structure|M|tries,design
+search-suggestions-system|Search Suggestions System|M|tries,strings
+word-search-ii|Word Search II|H|tries,backtracking
+kth-largest-element-in-a-stream|Kth Largest Element in a Stream|E|heap,design
+last-stone-weight|Last Stone Weight|E|heap
+k-closest-points-to-origin|K Closest Points to Origin|M|heap,randomized
+kth-largest-element-in-an-array|Kth Largest Element in an Array|M|heap,randomized
+top-k-frequent-words|Top K Frequent Words|M|heap,strings
+task-scheduler|Task Scheduler|M|heap,greedy,systems
+reorganize-string|Reorganize String|M|heap,greedy,strings
+design-twitter|Design Twitter|M|heap,design
+find-median-from-data-stream|Find Median from Data Stream|H|heap,design,randomized
+single-threaded-cpu|Single-Threaded CPU|M|heap,systems
+process-tasks-using-servers|Process Tasks Using Servers|M|heap,systems
+seat-reservation-manager|Seat Reservation Manager|M|heap,design
+ipo|IPO|H|heap,greedy
+subsets|Subsets|M|backtracking,bits
+subsets-ii|Subsets II|M|backtracking
+permutations|Permutations|M|backtracking
+combination-sum|Combination Sum|M|backtracking
+combination-sum-ii|Combination Sum II|M|backtracking
+letter-combinations-of-a-phone-number|Letter Combinations of a Phone Number|M|backtracking,strings
+word-search|Word Search|M|backtracking,math-matrix
+palindrome-partitioning|Palindrome Partitioning|M|backtracking,strings
+n-queens|N-Queens|H|backtracking
+sudoku-solver|Sudoku Solver|H|backtracking
+number-of-islands|Number of Islands|M|graphs
+max-area-of-island|Max Area of Island|M|graphs
+clone-graph|Clone Graph|M|graphs
+rotting-oranges|Rotting Oranges|M|graphs
+pacific-atlantic-water-flow|Pacific Atlantic Water Flow|M|graphs
+surrounded-regions|Surrounded Regions|M|graphs
+course-schedule|Course Schedule|M|graphs,systems
+course-schedule-ii|Course Schedule II|M|graphs,systems
+course-schedule-iv|Course Schedule IV|M|graphs
+keys-and-rooms|Keys and Rooms|M|graphs
+all-paths-from-source-to-target|All Paths From Source to Target|M|graphs,backtracking
+find-eventual-safe-states|Find Eventual Safe States|M|graphs,systems
+is-graph-bipartite|Is Graph Bipartite?|M|graphs
+evaluate-division|Evaluate Division|M|graphs,union-find
+minimum-height-trees|Minimum Height Trees|M|graphs
+word-ladder|Word Ladder|H|graphs,strings
+number-of-provinces|Number of Provinces|M|union-find,graphs
+redundant-connection|Redundant Connection|M|union-find,graphs
+accounts-merge|Accounts Merge|M|union-find,graphs
+parallel-courses-iii|Parallel Courses III|H|graphs,systems
+network-delay-time|Network Delay Time|M|advanced-graphs
+cheapest-flights-within-k-stops|Cheapest Flights Within K Stops|M|advanced-graphs
+path-with-minimum-effort|Path With Minimum Effort|M|advanced-graphs
+find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance|Find the City With the Smallest Number of Neighbors at a Threshold Distance|M|advanced-graphs
+min-cost-to-connect-all-points|Min Cost to Connect All Points|M|advanced-graphs,union-find
+swim-in-rising-water|Swim in Rising Water|H|advanced-graphs,heap
+reconstruct-itinerary|Reconstruct Itinerary|H|advanced-graphs
+critical-connections-in-a-network|Critical Connections in a Network|H|advanced-graphs,systems
+climbing-stairs|Climbing Stairs|E|dp
+min-cost-climbing-stairs|Min Cost Climbing Stairs|E|dp
+house-robber|House Robber|M|dp
+house-robber-ii|House Robber II|M|dp
+longest-palindromic-substring|Longest Palindromic Substring|M|dp,strings
+palindromic-substrings|Palindromic Substrings|M|dp,strings
+decode-ways|Decode Ways|M|dp,strings
+coin-change|Coin Change|M|dp
+coin-change-ii|Coin Change II|M|dp
+maximum-product-subarray|Maximum Product Subarray|M|dp,arrays
+word-break|Word Break|M|dp,strings
+longest-increasing-subsequence|Longest Increasing Subsequence|M|dp,binary-search
+partition-equal-subset-sum|Partition Equal Subset Sum|M|dp
+unique-paths|Unique Paths|M|dp,math-matrix
+minimum-path-sum|Minimum Path Sum|M|dp,math-matrix
+maximal-square|Maximal Square|M|dp,math-matrix
+longest-common-subsequence|Longest Common Subsequence|M|dp,strings
+best-time-to-buy-and-sell-stock-with-cooldown|Best Time to Buy and Sell Stock with Cooldown|M|dp
+target-sum|Target Sum|M|dp
+interleaving-string|Interleaving String|M|dp,strings
+longest-increasing-path-in-a-matrix|Longest Increasing Path in a Matrix|H|dp,graphs
+edit-distance|Edit Distance|M|dp,strings
+distinct-subsequences|Distinct Subsequences|H|dp,strings
+burst-balloons|Burst Balloons|H|dp
+regular-expression-matching|Regular Expression Matching|H|dp,strings
+jump-game|Jump Game|M|greedy
+jump-game-ii|Jump Game II|M|greedy
+gas-station|Gas Station|M|greedy
+hand-of-straights|Hand of Straights|M|greedy
+merge-triplets-to-form-target-triplet|Merge Triplets to Form Target Triplet|M|greedy
+partition-labels|Partition Labels|M|greedy,strings
+valid-parenthesis-string|Valid Parenthesis String|M|greedy,strings
+merge-intervals|Merge Intervals|M|intervals
+insert-interval|Insert Interval|M|intervals
+non-overlapping-intervals|Non-overlapping Intervals|M|intervals,greedy
+minimum-number-of-arrows-to-burst-balloons|Minimum Number of Arrows to Burst Balloons|M|intervals,greedy
+car-pooling|Car Pooling|M|intervals,systems
+my-calendar-i|My Calendar I|M|intervals,design
+rotate-image|Rotate Image|M|math-matrix
+spiral-matrix|Spiral Matrix|M|math-matrix
+set-matrix-zeroes|Set Matrix Zeroes|M|math-matrix
+game-of-life|Game of Life|M|math-matrix
+happy-number|Happy Number|E|math-matrix
+plus-one|Plus One|E|math-matrix
+powx-n|Pow(x, n)|M|math-matrix
+multiply-strings|Multiply Strings|M|math-matrix,strings
+detect-squares|Detect Squares|M|math-matrix,design
+reverse-integer|Reverse Integer|M|math-matrix,bits
+number-of-1-bits|Number of 1 Bits|E|bits
+counting-bits|Counting Bits|E|bits,dp
+reverse-bits|Reverse Bits|E|bits
+missing-number|Missing Number|E|bits,arrays
+single-number|Single Number|E|bits
+single-number-ii|Single Number II|M|bits
+power-of-two|Power of Two|E|bits
+hamming-distance|Hamming Distance|E|bits
+sum-of-two-integers|Sum of Two Integers|M|bits
+bitwise-and-of-numbers-range|Bitwise AND of Numbers Range|M|bits
+utf-8-validation|UTF-8 Validation|M|bits,strings,systems
+maximum-xor-of-two-numbers-in-an-array|Maximum XOR of Two Numbers in an Array|M|bits,tries
+longest-common-prefix|Longest Common Prefix|E|strings
+zigzag-conversion|Zigzag Conversion|M|strings
+string-to-integer-atoi|String to Integer (atoi)|M|strings
+validate-ip-address|Validate IP Address|M|strings,systems
+compare-version-numbers|Compare Version Numbers|M|strings,two-pointers
+text-justification|Text Justification|H|strings
+design-circular-queue|Design Circular Queue|M|design,systems
+design-circular-deque|Design Circular Deque|M|design
+design-hashmap|Design HashMap|E|design,arrays
+design-hashset|Design HashSet|E|design,arrays
+design-browser-history|Design Browser History|M|design,stack
+design-underground-system|Design Underground System|M|design
+snapshot-array|Snapshot Array|M|design,binary-search,systems
+all-oone-data-structure|All O'one Data Structure|H|design
+design-memory-allocator|Design Memory Allocator|M|design,systems
+design-a-food-rating-system|Design a Food Rating System|M|design,heap
+random-pick-with-weight|Random Pick with Weight|M|randomized,binary-search
+shuffle-an-array|Shuffle an Array|M|randomized
+print-in-order|Print in Order|E|concurrency
+print-foobar-alternately|Print FooBar Alternately|M|concurrency
+print-zero-even-odd|Print Zero Even Odd|M|concurrency
+building-h2o|Building H2O|M|concurrency
+fizz-buzz-multithreaded|Fizz Buzz Multithreaded|M|concurrency
+the-dining-philosophers|The Dining Philosophers|M|concurrency,systems`;
+const LC = LC_RAW.split("\n").map((l) => { const [slug, name, d, t] = l.split("|"); return { slug, name, difficulty: { E: "Easy", M: "Medium", H: "Hard" }[d], topics: t.split(",") }; });
+const LC_BY = Object.fromEntries(LC.map((p) => [p.slug, p]));
+
+const SOLVEDKEY = "jobprep.solved.v1";
+let solved = store.get(SOLVEDKEY, {}); /* slug -> date you marked it */
+function toggleSolved(slug) {
+  if (solved[slug]) delete solved[slug]; else solved[slug] = Date.now();
+  store.set(SOLVEDKEY, solved);
+}
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+async function pickLeetcode(d, count) {
+  const have = new Set(arr(d.leetcode).map((p) => p.slug));
+  const focus = arr(d.practice_focus).filter((f) => f && LC_TOPICS[f.topic]);
+  const wanted = focus.length ? focus.map((f) => f.topic) : ["arrays", "two-pointers", "linked-list", "trees", "graphs", "dp"];
+  const free = LC.filter((p) => !solved[p.slug] && !have.has(p.slug));
+  let pool = free.filter((p) => p.topics.some((t) => wanted.includes(t)));
+  if (pool.length < count * 4) pool = pool.concat(shuffle(free.filter((p) => !pool.includes(p))).slice(0, count * 4 - pool.length));
+  pool = shuffle(pool).slice(0, 80);
+  if (!pool.length) return [];
+  const prompt = `Pick LeetCode practice problems for one specific job interview.
+
+${jobContext(d)}
+Level: ${d.level || "entry level"}
+Responsibilities: ${arr(d.responsibilities).join("; ")}
+${arr(d.focus_areas).length ? "The company said to focus on: " + arr(d.focus_areas).join("; ") : ""}
+
+WHAT THIS JOB'S CODING INTERVIEW SHOULD PRACTISE (topic, weight 1-3, why):
+${focus.length ? focus.map((f) => "- " + LC_TOPICS[f.topic] + " (" + f.topic + "), weight " + (f.weight || 1) + ": " + (f.why || "")).join("\n") : "- general data structures and algorithms"}
+
+CANDIDATE PROBLEMS (slug | title | difficulty | topics). The candidate has not solved any of these. Pick ONLY from this list:
+${pool.map((p) => p.slug + " | " + p.name + " | " + p.difficulty + " | " + p.topics.join(",")).join("\n")}
+
+Rules:
+- Pick exactly ${count} problems. Spread them over the topics by weight; a weight-3 topic gets the most.
+- Difficulty: for entry level mostly Easy and Medium with at most one Hard; for senior roles more Medium and Hard.
+- Prefer the problem closest to the job's real work (a scheduler problem for a systems job, a parsing problem for a protocols job, a bits problem for embedded) over a generic classic.
+- "why": one short sentence naming the job requirement it practises.
+
+Reply with only JSON: {"picks": [{"slug": "...", "why": "..."}]}`;
+  const res = await sample.json(prompt);
+  const inPool = new Set(pool.map((p) => p.slug));
+  const out = [];
+  for (const x of arr(res && res.picks)) {
+    const p = LC_BY[x && x.slug];
+    if (!p || !inPool.has(p.slug) || out.some((o) => o.slug === p.slug)) continue;
+    out.push({ name: p.name, slug: p.slug, difficulty: p.difficulty, pattern: LC_TOPICS[p.topics.find((t) => wanted.includes(t)) || p.topics[0]], why: String(x.why || "") });
+  }
+  return out.slice(0, count);
+}
+
 /* ---------- LeetCode section ---------- */
 let lcBusy = false;
 function leetcodeSection(d) {
   const lc = arr(d.leetcode);
   const order = { Easy: 0, Medium: 1, Hard: 2 };
-  lc.sort((a, b) => (order[a.difficulty] ?? 1) - (order[b.difficulty] ?? 1));
+  lc.sort((a, b) => (solved[a.slug] ? 1 : 0) - (solved[b.slug] ? 1 : 0) || (order[a.difficulty] ?? 1) - (order[b.difficulty] ?? 1));
+  const nSolved = lc.filter((p) => solved[p.slug]).length;
   const more = h("button", { type: "button", class: "small soft" }, lcBusy ? "Finding…" : "Find more questions");
   more.disabled = lcBusy;
   const st = h("span", { class: "status", role: "status" });
   more.onclick = () => findMore();
-  return section("LeetCode practice", lc.length + " problems",
+  const focus = arr(d.practice_focus).filter((f) => f && LC_TOPICS[f.topic]).sort((a, b) => (b.weight || 1) - (a.weight || 1));
+  return section("LeetCode practice", lc.length + " problems" + (nSolved ? " · " + nSolved + " solved" : ""),
+    focus.length ? h("div", { class: "lc-focus" }, h("span", { class: "muted" }, "Chosen for this job's focus:"),
+      focus.map((f) => h("span", { class: "focus-chip w" + Math.min(3, Math.max(1, f.weight || 1)), title: f.why || "" }, LC_TOPICS[f.topic], h("i", { "aria-label": "weight " + (f.weight || 1) }, "●".repeat(Math.min(3, Math.max(1, f.weight || 1))))))) : null,
     lc.length ? h("div", { class: "table-wrap" }, h("table", {},
-      h("thead", {}, h("tr", {}, h("th", {}, "Problem"), h("th", {}, "Level"), h("th", {}, "Pattern"), h("th", {}, "Why this one"))),
+      h("thead", {}, h("tr", {}, h("th", {}, "Problem"), h("th", {}, "Level"), h("th", {}, "Topic"), h("th", {}, "Why this one"), h("th", {}, "Done"))),
       h("tbody", {}, lc.map((p) => {
         const slug = String(p.slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
         const href = slug ? "https://leetcode.com/problems/" + slug + "/" : "https://leetcode.com/problemset/?search=" + encodeURIComponent(p.name || "");
         const diff = ["Easy", "Medium", "Hard"].includes(p.difficulty) ? p.difficulty : "Medium";
-        return h("tr", { class: p._new ? "new" : null },
+        const isSolved = !!solved[slug];
+        const mark = h("button", { type: "button", class: "solve-btn" + (isSolved ? " on" : ""), "aria-pressed": String(isSolved), title: isSolved ? "Solved. Click to undo." : "Mark as solved: it won't be suggested again for any job." }, isSolved ? "✓ Solved" : "Mark solved");
+        mark.onclick = () => { toggleSolved(slug); replaceSection("lc"); toast(solved[slug] ? p.name + " marked as solved. It won't be suggested again." : p.name + " unmarked."); };
+        return h("tr", { class: [p._new ? "new" : "", isSolved ? "solved" : ""].filter(Boolean).join(" ") || null },
           h("td", {}, h("a", { href, target: "_blank", rel: "noopener" }, p.name)),
           h("td", {}, h("span", { class: "diff " + diff }, diff)),
           h("td", {}, h("span", { class: "pattern" }, p.pattern || "")),
-          h("td", {}, h("span", { class: "why" }, p.why || "")));
+          h("td", {}, h("span", { class: "why" }, p.why || "")),
+          h("td", {}, mark));
       })))) : null,
     h("div", { class: "tools" }, more, st));
 }
@@ -682,30 +1011,20 @@ async function findMore() {
   const jobId = current.id;
   lcBusy = true; replaceSection("lc");
   const s = document.querySelector('[data-sec="lc"] .status');
-  s.textContent = "Looking for more problems… about 15 to 30 seconds.";
-  const have = arr(d.leetcode).map((p) => p.slug || p.name);
-  const prompt = `${jobContext(d)}
-
-The candidate already has these LeetCode problems: ${have.join(", ")}.
-
-Suggest 5 more well-known LeetCode problems that fit this job's domain and interview style, none of them from the list above. Mostly Easy and Medium, with at most one Hard. Only use problems whose exact URL slug you are sure of.
-
-Reply with only a JSON object: {"leetcode": [{"name": "exact LeetCode title", "slug": "exact leetcode.com URL slug", "difficulty": "Easy" | "Medium" | "Hard", "pattern": "short pattern name", "why": "one short sentence on why it fits this job"}]}`;
+  if (s) s.textContent = "Choosing more problems for this job… about 15 to 30 seconds.";
   let msg = "", isErr = false;
   try {
-    const res = await sample.json(prompt);
-    const seen = new Set(have.map((x) => String(x).toLowerCase()));
-    arr(d.leetcode).forEach((p) => { delete p._new; seen.add(String(p.name || "").toLowerCase()); });
-    const fresh = arr(res && res.leetcode).filter((p) => p && p.name && !seen.has(String(p.slug || "").toLowerCase()) && !seen.has(String(p.name).toLowerCase()));
+    const fresh = await pickLeetcode(d, 5);
+    arr(d.leetcode).forEach((p) => { delete p._new; });
     fresh.forEach((p) => { p._new = true; });
     d.leetcode = arr(d.leetcode).concat(fresh);
     saveJob(jobId, d);
-    msg = fresh.length ? "Added " + fresh.length + " problems (marked with a blue edge)." : "No new problems this time. Try again.";
+    msg = fresh.length ? "Added " + fresh.length + " problems (marked with a blue edge)." : "No more unsolved problems fit this job.";
     toast(msg);
   } catch (err) { msg = errMsg(err); isErr = true; }
   lcBusy = false; replaceSection("lc");
   const s2 = document.querySelector('[data-sec="lc"] .status');
-  s2.textContent = msg; s2.classList.toggle("error", isErr);
+  if (s2) { s2.textContent = msg; s2.classList.toggle("error", isErr); }
 }
 
 /* ---------- Study plan section ---------- */
@@ -798,13 +1117,13 @@ Reply with only one JSON object in English:
   "interview_format": ["3-6 likely interview stages, reflecting the notes"],
   "topics": [{"topic": "area", "questions": ["2-4 likely interview questions"]}],
   "behavioral": ["3-5 likely personal questions, including any soft skills the notes mention"],
-  "leetcode_add": [{"name": "exact LeetCode title", "slug": "exact leetcode.com URL slug", "difficulty": "Easy" | "Medium" | "Hard", "pattern": "short pattern name", "why": "why it fits"}],
+  "practice_focus": [{"topic": "one of: ${Object.keys(LC_TOPICS).join(" | ")}", "weight": 1 | 2 | 3, "why": "which part of the job or the notes needs it"}],
   "plan": [{"day": "Day 1", "focus": "short focus", "tasks": ["2-3 short concrete tasks"]}]
 }
 
 Rules:
 - topics: 4-7 areas. One topic per main subject in the notes (for example system design, how AI agents work, AI automation), plus the most important earlier ones.
-- leetcode_add: 0-4 well-known problems not in the current list, only if the notes call for more coding practice; exact slugs only.
+- practice_focus: 3-6 coding topics, updated for what the notes say about the coding interview.
 - plan: exactly ${n} days, weighted toward what the notes stress, ending with interview practice.
 - Keep every string short and plain.`;
   let msg = "", isErr = false;
@@ -816,11 +1135,13 @@ Rules:
     d.topics = res.topics;
     if (arr(res.behavioral).length) d.behavioral = res.behavioral;
     if (arr(res.plan).length) d.plan = res.plan;
-    const seen = new Set(arr(d.leetcode).flatMap((p) => { delete p._new; return [String(p.slug || "").toLowerCase(), String(p.name || "").toLowerCase()]; }));
-    const fresh = arr(res.leetcode_add).filter((p) => p && p.name && !seen.has(String(p.slug || "").toLowerCase()) && !seen.has(String(p.name).toLowerCase()));
+    if (arr(res.practice_focus).length) d.practice_focus = res.practice_focus;
+    arr(d.leetcode).forEach((p) => { delete p._new; });
+    let fresh = [];
+    try { fresh = await pickLeetcode(d, 3); } catch (e) { /* keep the rest of the update */ }
     fresh.forEach((p) => { p._new = true; });
     d.leetcode = arr(d.leetcode).concat(fresh);
-    saveCurrent();
+    saveJob(jobId, d);
     msg = "Prep updated: interview process, topics, personal questions" + (fresh.length ? ", " + fresh.length + " new LeetCode problems" : "") + " and study plan.";
   } catch (err) { msg = errMsg(err); isErr = true; }
   notesBusy = false;
@@ -2224,6 +2545,8 @@ async function startAnalysis(s) {
     const data = await sample.json(buildPrompt(s.text.slice(0, 30000), s.url, cv ? candidateText() : "The candidate describes their skills as: " + s.skills.trim(), s.days), { signal: ctl.signal });
     if (!data || typeof data !== "object" || !data.title) throw { code: "invalid_json" };
     data._posting = s.text;
+    data.leetcode = [];
+    try { data.leetcode = await pickLeetcode(data, 8); } catch (e) { /* the plan still works; "Find more questions" can retry */ }
     const id = String(Date.now());
     const list = store.get(HKEY, []);
     list.unshift({ id, date: Date.now(), url: s.url, data });
@@ -2390,12 +2713,23 @@ function factsPanel() {
         }))
       : h("p", { class: "note" }, "None yet. When the CV agent asks you something, your answers are kept here and count as facts about you."));
 }
+function solvedPanel() {
+  const slugs = Object.keys(solved).sort((a, b) => solved[b] - solved[a]);
+  return h("section", { class: "panel" }, h("h2", { class: "panel-title" }, "LeetCode you've solved" + (slugs.length ? " · " + slugs.length : "")),
+    slugs.length
+      ? h("div", { class: "solved-list" }, slugs.map((sl) => {
+          const x = h("button", { type: "button", "aria-label": "Unmark " + ((LC_BY[sl] || {}).name || sl) }, "×");
+          x.onclick = () => { toggleSolved(sl); showProfile(); };
+          return h("span", { class: "chip-x" }, (LC_BY[sl] || {}).name || sl, x);
+        }))
+      : h("p", { class: "note" }, "Mark problems as solved in any plan's LeetCode tab. They won't be suggested again, for any job."));
+}
 function showProfile() {
   route = { name: "profile" }; setNav("profile");
   renderCvPanel(); renderProfileInfo(); renderGithubUI(); renderSkillsPanel();
   if (cv && !arr(cv.skills).length && sample && !skillsBusy && !cv.skillsDate) extractSkills();
   showView(h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "My profile"), h("p", { class: "lead" }, "What the app knows about you. It all stays in this browser."))),
-    $("cvPanel"), $("skillsPanel"), factsPanel());
+    $("cvPanel"), $("skillsPanel"), solvedPanel(), factsPanel());
 }
 
 /* ---------- Settings ---------- */
@@ -2793,7 +3127,7 @@ Reply with only one JSON object in English, with exactly these keys:
   "nice_to_have": [same shape],
   "red_flags": ["things that clash with an entry-level candidate, e.g. 3+ years required; empty array if none"],
   "interview_format": ["3-5 likely interview stages for this kind of role and company"],
-  "leetcode": [{"name": "exact LeetCode problem title", "slug": "exact leetcode.com URL slug", "difficulty": "Easy" | "Medium" | "Hard", "pattern": "short pattern name", "why": "why it fits this job"}],
+  "practice_focus": [{"topic": "one of: ${Object.keys(LC_TOPICS).join(" | ")}", "weight": 1 | 2 | 3, "why": "which part of this job needs it"}],
   "topics": [{"topic": "area", "questions": ["2-4 likely interview questions"]}],
   "behavioral": ["3-4 likely personal or behavioral questions"],
   "plan": [{"day": "Day 1", "focus": "short focus", "tasks": ["2-3 concrete tasks"]}]
@@ -2801,9 +3135,9 @@ Reply with only one JSON object in English, with exactly these keys:
 
 Rules:
 - "you" compares the skill to the candidate above: strong = clearly used in their jobs or projects, or listed as a main skill; some = mentioned briefly, familiar, or closely related; gap = not shown.
-- leetcode: 6-10 well-known problems whose exact slug you are sure of, matched to the job's domain, mostly Easy and Medium for entry level.
+- practice_focus: 3-6 topics this specific job's coding interview is likely to test; weight 3 = central to the job. Base it on the job's domain and tech, not on generic favourites (for example embedded: bits, linked lists, design; backend: design, heaps, graphs; systems or infrastructure: scheduling and systems, concurrency, heaps; data or ML: heaps, sampling and streams, arrays).
 - topics: 3-5 areas specific to this job's tech stack and domain.
-- plan: exactly ${days} days ("Day 1" to "Day ${days}"), mixing the topics and the LeetCode problems, ending with interview practice.
+- plan: exactly ${days} days ("Day 1" to "Day ${days}"), mixing the interview topics and LeetCode practice on the practice_focus topics, ending with interview practice.
 - Keep every string short and plain.`;
 }
 

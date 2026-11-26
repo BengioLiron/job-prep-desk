@@ -58,6 +58,15 @@ Design choices:
 
 In the Claude desktop app, the first question of a new plan takes a link. The page opens it in the app's own browser (where you're signed in, so LinkedIn works too) and reads the page's text, through the `mcp` capability with `host:claude_browser` (only `navigate` and `get_page_text`). In a web browser, on a phone, or when a page can't be read, it switches to pasting the text.
 
+## LeetCode selection
+
+Problems are chosen in two steps, so they fit the job instead of being the same classics every time:
+
+1. The job analysis returns `practice_focus`: the coding topics this job's interview is likely to test (from a fixed list such as concurrency, scheduling and systems, bits, heaps, graphs), each with a weight and the reason.
+2. The page builds a pool from a built-in catalog of 235 free LeetCode problems, leaving out problems you've marked as solved and ones already in the plan. Claude picks only from that pool and ties each pick to a job requirement. Picks outside the pool are dropped, so no invented problems or broken links.
+
+Mark a problem "Solved" in any plan and it won't be suggested again, for any job. The list is in My profile.
+
 ## Your skills
 
 Skills are read from your CV, not typed in. Claude lists them and judges each one from the CV alone: green (strong), yellow (some), red (basic). The page keeps only skills that really appear in the CV, and you can click a tile to change its level. The levels go into every prompt about you.
