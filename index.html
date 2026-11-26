@@ -148,6 +148,8 @@ label.check input { width: 16px; height: 16px; accent-color: var(--accent); }
 .sub-block { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 .sub-block h3 { font-size: 14px; }
 .sub-block h3 .hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.gh-snap { display: flex; flex-direction: column; gap: 8px; }
+#ghLive { display: flex; flex-direction: column; gap: 10px; }
 .gh-private summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 .gh-private[open] label { margin-top: 8px; }
 .style-line { display: flex !important; align-items: center; gap: 6px; }
@@ -445,7 +447,7 @@ td .why { color: var(--muted); font-size: 13px; }
   <input type="number" id="days" min="1" max="30" value="5">
   <div class="panel persist" id="skillsPanel">
     <h2 class="panel-title">Your skills</h2>
-    <label for="skills">In one line <span class="hint">Used to mark which of a job's skills you already have.</span>
+    <label for="skills">In one line <span class="hint">Only used when you haven't uploaded a CV. With a CV, your skills come from it.</span>
       <input type="text" id="skills" value="Strong: Java, C, C++. Familiar: Python. Entry level, first job.">
     </label>
   </div>
@@ -469,6 +471,8 @@ td .why { color: var(--muted); font-size: 13px; }
       </div>
       <div class="sub-block">
         <h3>GitHub <span class="hint">· the CV agent picks your most relevant projects</span></h3>
+        <div id="ghSnap" class="gh-snap" hidden></div>
+        <div id="ghLive">
         <label for="ghUser">Username <input type="text" id="ghUser" placeholder="your-github-username" autocomplete="off" spellcheck="false"></label>
         <details class="gh-private">
           <summary>Private repos (optional)</summary>
@@ -478,6 +482,7 @@ td .why { color: var(--muted); font-size: 13px; }
         </details>
         <div class="row"><button type="button" class="small soft" id="ghCheck">Save and check</button></div>
         <div class="status" id="ghStatus" role="status"></div>
+        </div>
       </div>
     </div>
     <div class="panel setup-panel persist" id="setupPanel" hidden>
@@ -708,7 +713,7 @@ async function rebuildPlan(n) {
   document.querySelector('[data-sec="plan"] .status').textContent = "Building a " + n + "-day plan… about 15 to 40 seconds.";
   const prompt = `${jobContext(d)}
 LeetCode problems to fit in: ${arr(d.leetcode).map((p) => p.name).join(", ")}
-Candidate: ${$("skills").value.trim()}
+${candidateText()}
 
 Write a study plan of exactly ${n} days that prepares this candidate for the interview, mixing the interview topics and the LeetCode problems${n <= 2 ? " (focus on the most important material only)" : ""}${n >= 10 ? " and including review and mock-interview days" : ""}. End with interview practice.
 
@@ -759,7 +764,7 @@ async function applyNotes(notes) {
   const prompt = `${jobContext(d)}
 Current interview topics with questions: ${JSON.stringify(arr(d.topics))}
 Current LeetCode list: ${arr(d.leetcode).map((p) => p.name).join(", ")}
-Candidate: ${$("skills").value.trim()}
+${candidateText()}
 
 The company just sent the candidate these notes about the interview (may be in Hebrew):
 """
@@ -1309,7 +1314,7 @@ function agentPrompt(file, a, d) {
     max_questions: AGENT_MAX_ASKS,
     max_repo_reads: AGENT_MAX_REPO_READS,
     repo_reads_used: a.repoReads,
-    github: ghName(settings.githubUser) ? "connected (user " + settings.githubUser + ")" : "not connected: don't use list_repos or read_repo",
+    github: ghAvailable() ? "connected (" + ghLabel() + ")" : "not connected: don't use list_repos or read_repo",
     questions_used: a.asks,
     steps_left: AGENT_MAX_STEPS - a.steps.length,
     cv_schema: CV_SCHEMA,
@@ -1346,11 +1351,11 @@ async function runAgentTool(a, tool, args) {
       };
     }
     case "list_repos": {
-      if (!ghName(settings.githubUser)) return fail("GitHub isn't connected. Continue without it.");
+      if (!ghAvailable()) return fail("GitHub isn't connected. Continue without it.");
       try { a.repos = await ghListRepos(); }
       catch (e) { return fail(e.message + " Continue without GitHub."); }
       const lines = a.repos.map((r) => "- " + r.name + " | " + (r.language || "?") + " | updated " + r.updated + (r.stars ? " | " + r.stars + "★" : "") + (r.topics.length ? " | topics: " + r.topics.join(", ") : "") + " | " + (r.description || "no description"));
-      return { args: settings.githubUser, summary: a.repos.length + " repos: " + a.repos.slice(0, 6).map((r) => r.name).join(", ") + (a.repos.length > 6 ? "…" : ""), obs: lines.length ? "The candidate's own repos (forks excluded), most recently pushed first:\n" + lines.join("\n") : "No repos found." };
+      return { args: ghLabel(), summary: a.repos.length + " repos: " + a.repos.slice(0, 6).map((r) => r.name).join(", ") + (a.repos.length > 6 ? "…" : ""), obs: lines.length ? "The candidate's own repos (forks excluded), most recently pushed first:\n" + lines.join("\n") : "No repos found." };
     }
     case "read_repo": {
       const name = ghName(args.name);
@@ -1431,7 +1436,7 @@ async function runCvAgent() {
   if (!cv || agentBusy()) return;
   if (!sample) { cvMsg = { text: noAi(), err: true }; replaceSection("cv"); return; }
   const a = agent = { id: current.id, data: current.data, status: "running", steps: [], draft: null, asks: 0, repoReads: 0, repoText: "", repos: null, pending: null, ctl: null, stopped: false, error: null };
-  let retried = false;
+  let retried = false, failStreak = 0;
   rerenderAgent();
   try {
     const file = await loadAgent("cv-agent");
@@ -1458,10 +1463,14 @@ async function runCvAgent() {
       const out = await runAgentTool(a, tool, (reply && typeof reply.args === "object" && reply.args) || {});
       Object.assign(step, { args: out.args || "", result: out.summary, obs: out.obs, error: !!out.error, ms: Math.round(performance.now() - t0) });
       if (out.done) { a.status = "done"; saveAgentResult(a); break; }
+      /* Guardrail: 3 failed steps in a row means the agent is stuck; stop instead of burning steps. */
+      failStreak = out.error ? failStreak + 1 : 0;
+      if (failStreak >= 3) { a.stuck = true; break; }
       rerenderAgent();
     }
     if (a.status !== "done") {
-      a.status = a.stopped ? "stopped" : "limit";
+      a.status = a.stopped ? "stopped" : a.stuck ? "error" : "limit";
+      if (a.stuck) a.error = "The agent got stuck: 3 steps in a row failed." + (a.draft ? " Its last draft is below." : " Try running it again.");
       if (a.draft) saveAgentResult(a); /* keep the partial draft; unverified lines stay marked "check" */
     }
   } catch (err) {
@@ -1848,7 +1857,7 @@ function readiness() {
   const items = [
     [!!cv, "Your CV", cv ? cv.name : "Not uploaded yet. Needed for the tailored CV.", false],
     [!!profile, "Previous CV", profile ? "Design and format learned" : "Optional. Your old CV's design and format.", true],
-    [!!ghName(settings.githubUser), "GitHub", ghName(settings.githubUser) ? settings.githubUser : "Optional. Lets the CV agent pick your projects.", true]
+    [ghAvailable(), "GitHub", ghAvailable() ? (useSnapshot() ? ghSnapshot.repos.length + " repos (snapshot)" : settings.githubUser) : "Optional. Lets the CV agent pick your projects.", true]
   ];
   if (!inClaude) items.unshift([!!settings.workerUrl, "AI connection", settings.workerUrl ? "Set up" : "Needed before anything else.", false]);
   if (FS_OK) items.push([!!baseDir, "Job folders", baseDir ? baseDir.name : "Optional. Save each plan into its own folder.", true]);
@@ -1910,26 +1919,30 @@ function showSaved() {
 
 /* ---------- Step-by-step flows (the wizard page and the pop-up dialogs) ---------- */
 function runFlow(host, cfg) {
-  let i = 0;
   const state = cfg.state || {};
+  const visible = () => cfg.steps.filter((x) => !x.when || x.when(state));
+  let cur = visible()[0];
   const draw = () => {
-    const st = cfg.steps[i];
+    const vis = visible();
+    let i = vis.indexOf(cur);
+    if (i < 0) { i = 0; cur = vis[0]; }
+    const st = cur;
     const val = (v) => (typeof v === "function" ? v(state) : v);
-    const last = i === cfg.steps.length - 1;
+    const last = i === vis.length - 1;
     const err = h("p", { class: "flow-error", role: "alert" });
     const back = h("button", { type: "button", class: "btn ghost" }, i === 0 ? "Cancel" : "← Back");
-    back.onclick = () => { if (i === 0) { if (cfg.onCancel) cfg.onCancel(); } else { i--; draw(); } };
+    back.onclick = () => { if (i === 0) { if (cfg.onCancel) cfg.onCancel(); } else { cur = visible()[visible().indexOf(cur) - 1] || vis[i - 1]; draw(); } };
     const next = h("button", { type: "button", class: "btn primary" }, last ? (cfg.finishLabel || "Done") : "Next →");
     next.onclick = async () => {
       const problem = st.check ? st.check(state) : null;
       if (problem) { err.textContent = problem; return; }
-      if (last) await cfg.onFinish(state); else { i++; draw(); }
+      if (last) await cfg.onFinish(state); else { const v = visible(); cur = v[v.indexOf(cur) + 1]; draw(); }
     };
     const skip = val(st.optional) ? h("button", { type: "button", class: "btn ghost" }, st.skipLabel || "Skip") : null;
-    if (skip) skip.onclick = async () => { if (st.onSkip) st.onSkip(state); if (last) await cfg.onFinish(state); else { i++; draw(); } };
-    const n = cfg.steps.length;
+    if (skip) skip.onclick = async () => { if (st.onSkip) st.onSkip(state); if (last) await cfg.onFinish(state); else { const v = visible(); cur = v[v.indexOf(cur) + 1]; draw(); } };
+    const n = vis.length;
     const progress = n > 1 ? h("div", { class: "flow-progress" }, h("span", {}, "Step " + (i + 1) + " of " + n),
-      h("div", { class: "dots", "aria-hidden": "true" }, cfg.steps.map((_, j) => h("i", { class: j < i ? "done" : j === i ? "on" : null })))) : null;
+      h("div", { class: "dots", "aria-hidden": "true" }, vis.map((_, j) => h("i", { class: j < i ? "done" : j === i ? "on" : null })))) : null;
     const body = st.body(state, { next: () => next.click(), redraw: draw });
     host.replaceChildren(h("div", { class: "flow" },
       cfg.title ? h("p", { class: "eyebrow" }, cfg.title) : null,
@@ -2001,10 +2014,10 @@ function showNew() {
           return [ta, h("label", {}, h("span", {}, "Link to the posting ", h("span", { class: "hint" }, "(optional, so you can reopen it)")), url)];
         },
         check: (st) => { const t = st.text.trim(); if (!t) return "Paste the posting text first."; if (/^https?:\/\/\S+$/.test(t)) return "That's a link. Open it, copy the text of the posting, and paste that instead."; if (t.length < 200) return "That looks too short for a job posting. Paste the whole description."; return null; } },
-      { title: "What are you good at?", hint: "One line is enough. It's used to mark which of the job's skills you already have.",
+      { title: () => (cv ? "I'll use this CV" : "Add your CV"), hint: () => (cv ? "Your skills and experience come from it, and it's the CV I'll tailor to this job." : "I'll take your skills and experience from it, so I don't have to ask."), optional: () => !cv, skipLabel: "I don't have it now", body: cvStepBody },
+      { title: "What are you good at?", when: () => !cv, hint: "Without a CV, one line about your skills helps me mark what you already know.",
         body: (st) => { const i = h("input", { type: "text", "aria-label": "Your skills" }); i.value = st.skills; i.oninput = () => { st.skills = i.value; }; return [i, h("p", { class: "note" }, "For example: Strong: Java, C, C++. Familiar: Python. Entry level, first job.")]; },
         check: (st) => (st.skills.trim() ? null : "Write a few words about your skills.") },
-      { title: () => (cv ? "I'll use this CV" : "Add your CV"), hint: "It's used later to tailor your CV to this job.", optional: () => !cv, skipLabel: "Add it later", body: cvStepBody },
       { title: "How many days until the interview?", hint: "Your study plan gets one card per day.", body: daysPicker },
       { title: "Did the company tell you anything?", hint: "If you got a recruiter email or interview tips, paste them. The plan will focus on what they said.", optional: true, skipLabel: "Nothing yet",
         onSkip: (st) => { st.notes = ""; },
@@ -2015,7 +2028,7 @@ function showNew() {
           const row = (k, v) => h("li", {}, h("span", {}, k), h("strong", {}, v));
           return h("ul", { class: "review" },
             row("Posting", (first.length > 60 ? first.slice(0, 60) + "…" : first) + " (" + st.text.trim().length.toLocaleString() + " characters)"),
-            row("Your skills", st.skills),
+            row("Your skills", cv ? "From your CV" : st.skills),
             row("CV", cv ? cv.name : "None yet, add it later"),
             row("Study plan", st.days + " days"),
             row("Company tips", st.notes.trim() ? "Yes, " + st.notes.trim().length + " characters" : "None"));
@@ -2026,7 +2039,7 @@ function showNew() {
 
 async function startAnalysis(s) {
   if (!sample) { toast(noAi(), true); return; }
-  store.set("jobprep.skills", s.skills.trim()); $("skills").value = s.skills.trim();
+  if (!cv) { store.set("jobprep.skills", s.skills.trim()); $("skills").value = s.skills.trim(); }
   store.set("jobprep.days", s.days); $("days").value = s.days;
   ctl = new AbortController();
   const labels = ["Reading the posting", "Matching it to your skills", "Choosing practice questions", "Building your " + s.days + "-day plan"];
@@ -2044,7 +2057,7 @@ async function startAnalysis(s) {
     lis.forEach((li, k) => { li.className = k < at ? "done" : k === at ? "on" : ""; });
   }, 500);
   try {
-    const data = await sample.json(buildPrompt(s.text.slice(0, 30000), s.url, s.skills.trim(), s.days), { signal: ctl.signal });
+    const data = await sample.json(buildPrompt(s.text.slice(0, 30000), s.url, cv ? candidateText() : "The candidate describes their skills as: " + s.skills.trim(), s.days), { signal: ctl.signal });
     if (!data || typeof data !== "object" || !data.title) throw { code: "invalid_json" };
     data._posting = s.text;
     const id = String(Date.now());
@@ -2194,8 +2207,8 @@ function openTailorFlow() {
       h("ul", { class: "uses" },
         h("li", { class: "ok" }, "Your CV: " + (cv ? cv.name : "…")),
         h("li", { class: profile ? "ok" : "" }, profile ? "Previous CV: its design and format" : "No previous CV (optional: adds your design)"),
-        h("li", { class: ghName(settings.githubUser) ? "ok" : "" }, ghName(settings.githubUser) ? "GitHub: " + settings.githubUser + " (agent only)" : "No GitHub (optional: lets the agent pick projects)")),
-      profile && ghName(settings.githubUser) ? null : h("p", { class: "note" }, "You can add the optional ones in ", h("a", { href: "#/profile" }, "My profile"), ".")
+        h("li", { class: ghAvailable() ? "ok" : "" }, ghAvailable() ? "GitHub: " + (useSnapshot() ? ghSnapshot.repos.length + " repos" : settings.githubUser) + " (agent only)" : "No GitHub (optional: lets the agent pick projects)")),
+      profile && ghAvailable() ? null : h("p", { class: "note" }, "You can add the optional ones in ", h("a", { href: "#/profile" }, "My profile"), ".")
     ] });
   openDialogFlow({ title: "Tailor my CV", state: { mode: "agent" }, finishLabel: "Start", steps,
     onFinish: (s) => { refreshActions(); setTab("cv"); if (s.mode === "agent") runCvAgent(); else tailorCv(); } });
@@ -2501,7 +2514,20 @@ async function ghFetch(path, raw) {
 }
 const ghName = (s) => /^[A-Za-z0-9._-]{1,100}$/.test(String(s || "")) ? String(s) : null;
 
+/* Inside claude.ai the page can't reach GitHub. Instead it uses a snapshot of
+   your repos (data/github-projects.json) that Claude made in chat and published
+   with the page. The standalone site reads GitHub live. */
+let ghSnapshot = null;
+const ghSnapReady = fetch("data/github-projects.json", { cache: "no-cache" })
+  .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+  .then((j) => { ghSnapshot = j && Array.isArray(j.repos) ? j : null; renderGithubUI(); return ghSnapshot; });
+const useSnapshot = () => !!ghSnapshot && (inClaude || !ghName(settings.githubUser));
+const ghAvailable = () => useSnapshot() || !!ghName(settings.githubUser);
+const ghLabel = () => (useSnapshot() ? ghSnapshot.user + " (snapshot from " + ghSnapshot.made + ")" : settings.githubUser);
+
 async function ghListRepos() {
+  await ghSnapReady;
+  if (useSnapshot()) return ghSnapshot.repos.map((r) => ({ name: r.name, owner: r.owner, url: r.url, description: r.description || "", language: r.language || "", topics: arr(r.topics), stars: 0, updated: r.updated || "", private: !!r.private }));
   const user = ghName(settings.githubUser);
   if (!user) throw new Error("No GitHub username set.");
   const list = settings.githubToken
@@ -2515,6 +2541,11 @@ async function ghListRepos() {
 }
 
 async function ghReadRepo(owner, name) {
+  if (useSnapshot()) {
+    const r = ghSnapshot.repos.find((x) => x.name === name);
+    if (!r) throw new Error("Not in the snapshot.");
+    return { url: r.url, description: r.description || "", languages: arr(r.languages), files: arr(r.files), readme: String(r.readme || "") + (r.extra ? "\n\n[Other files from the repo]\n" + r.extra : "") };
+  }
   const base = "/repos/" + owner + "/" + name;
   const [meta, readme, langs, files] = await Promise.all([
     ghFetch(base),
@@ -2534,6 +2565,14 @@ async function ghReadRepo(owner, name) {
 function renderGithubUI() {
   $("ghUser").value = settings.githubUser || "";
   $("ghToken").value = settings.githubToken || "";
+  const snapOnly = inClaude && !!ghSnapshot;
+  $("ghLive").hidden = snapOnly;
+  $("ghSnap").hidden = !snapOnly;
+  if (snapOnly) $("ghSnap").replaceChildren(
+    h("div", { class: "file-card" }, h("span", { class: "fc-icon", "aria-hidden": "true" }, "GIT"),
+      h("span", {}, h("strong", {}, ghSnapshot.repos.length + " repos from " + ghSnapshot.user),
+        h("span", {}, ghSnapshot.repos.map((r) => r.name).join(", ")))),
+    h("p", { class: "note" }, "A snapshot Claude made from your GitHub on " + ghSnapshot.made + ". The CV agent picks the projects that fit each job. Pushed something new? Ask Claude in the chat to refresh it."));
 }
 $("ghCheck").onclick = async () => {
   settings.githubUser = $("ghUser").value.trim().replace(/^@/, "").replace(/^https?:\/\/github\.com\//, "").replace(/\/.*$/, "");
@@ -2554,10 +2593,20 @@ $("ghCheck").onclick = async () => {
 };
 renderGithubUI();
 
+/* What the AI knows about the candidate: the CV when there is one (plus the
+   previous CV and their own answers), otherwise the one-line skills summary. */
+function candidateText() {
+  if (cv) {
+    return "THE CANDIDATE'S CV (their skills and experience come from here):\n\"\"\"\n" + cv.text.slice(0, 15000) + "\n\"\"\"" +
+      (profile ? "\nTheir previous CV adds:\n\"\"\"\n" + profile.text.slice(0, 6000) + "\n\"\"\"" : "") +
+      (arr(cv.facts).length ? "\nThey also told us:\n" + cv.facts.map((f) => "- " + f.q + " " + f.a).join("\n") : "");
+  }
+  return "The candidate describes their skills as: " + ($("skills").value.trim() || "entry-level software engineer");
+}
 function buildPrompt(text, url, skills, days) {
   return `You help an entry-level software engineer in Israel understand a job posting and prepare for the interview.
 
-Candidate: ${skills}
+${skills}
 ${url ? "Posting link (for reference only, you cannot open it): " + url + "\n" : ""}
 Job posting text, pasted by the candidate (it may be in Hebrew or English and may include page clutter; ignore the clutter):
 """
@@ -2584,7 +2633,7 @@ Reply with only one JSON object in English, with exactly these keys:
 }
 
 Rules:
-- "you" compares the skill to the candidate line above: strong = listed as strong, some = familiar or closely related, gap = not listed.
+- "you" compares the skill to the candidate above: strong = clearly used in their jobs or projects, or listed as a main skill; some = mentioned briefly, familiar, or closely related; gap = not shown.
 - leetcode: 6-10 well-known problems whose exact slug you are sure of, matched to the job's domain, mostly Easy and Medium for entry level.
 - topics: 3-5 areas specific to this job's tech stack and domain.
 - plan: exactly ${days} days ("Day 1" to "Day ${days}"), mixing the topics and the LeetCode problems, ending with interview practice.

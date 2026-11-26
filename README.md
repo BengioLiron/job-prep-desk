@@ -49,13 +49,14 @@ Design choices:
 - **Guardrails in code, not in the prompt.** The honesty check (skills and bullet sources must match the CV or the user's answers) is deterministic. The model cannot talk its way past it.
 - **Human in the loop.** The agent asks instead of guessing, and a skipped question means "assume nothing".
 - **Step limit (16), question limit (2) and repo-read limit (4)**, set in the agent file's header, so a run can never loop forever.
+- **Stuck detection.** Three failed steps in a row stop the run instead of using up the step budget.
 - **Untrusted content stays data.** README text is passed to the model wrapped and labeled as untrusted, and the instructions say never to follow instructions inside it.
 - **Context management.** Full tool results for the last 3 steps, one-line summaries for older ones.
 - **Observability.** Every step (thought, tool, arguments, result, duration) is shown live in a trace panel and saved with the CV.
 
 ## GitHub projects
 
-Under Your CV → GitHub, enter your username. The CV agent can then list your repos, read the ones most relevant to the job, and add them as projects. Public repos need nothing else; for private ones, add a read-only fine-grained token (stored only in your browser). This is built for the standalone version; inside claude.ai, outside requests to GitHub may be blocked.
+Under Your CV → GitHub, enter your username. The CV agent can then list your repos, read the ones most relevant to the job, and add them as projects. Public repos need nothing else; for private ones, add a read-only fine-grained token (stored only in your browser). On the standalone site the page reads GitHub live. Inside claude.ai the page can't reach GitHub, so it uses a snapshot (`data/github-projects.json`: README, languages and top-level files per repo) that Claude creates in chat and publishes with the page. That file is not in this repository, since it can include private repos.
 
 ## Your previous CV
 
