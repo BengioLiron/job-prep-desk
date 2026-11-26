@@ -54,6 +54,14 @@ Design choices:
 - **Context management.** Full tool results for the last 3 steps, one-line summaries for older ones.
 - **Observability.** Every step (thought, tool, arguments, result, duration) is shown live in a trace panel and saved with the CV.
 
+## Job posting from a link
+
+In the Claude desktop app, the first question of a new plan takes a link. The page opens it in the app's own browser (where you're signed in, so LinkedIn works too) and reads the page's text, through the `mcp` capability with `host:claude_browser` (only `navigate` and `get_page_text`). In a web browser, on a phone, or when a page can't be read, it switches to pasting the text.
+
+## Your skills
+
+Skills are read from your CV, not typed in. Claude lists them and judges each one from the CV alone: green (strong), yellow (some), red (basic). The page keeps only skills that really appear in the CV, and you can click a tile to change its level. The levels go into every prompt about you.
+
 ## GitHub projects
 
 Under Your CV → GitHub, enter your username. The CV agent can then list your repos, read the ones most relevant to the job, and add them as projects. Public repos need nothing else; for private ones, add a read-only fine-grained token (stored only in your browser). On the standalone site the page reads GitHub live. Inside claude.ai the page can't reach GitHub, so it uses a snapshot (`data/github-projects.json`: README, languages and top-level files per repo) that Claude creates in chat and publishes with the page. That file is not in this repository, since it can include private repos.

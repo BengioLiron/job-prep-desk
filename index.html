@@ -414,6 +414,24 @@ td .why { color: var(--muted); font-size: 13px; }
 .ns.done .r-dot { border-color: transparent; }
 .notes-quote { margin: 0; padding: 12px 14px; border-left: 3px solid var(--line); background: var(--surface); border-radius: 0 8px 8px 0; white-space: pre-wrap; font-size: 14px; color: var(--muted); max-height: 220px; overflow: auto; }
 
+/* Skill tiles: green strong, yellow some, red basic */
+.skills-body { display: flex; flex-direction: column; gap: 14px; }
+.skill-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.skill-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.skill-legend i { width: 12px; height: 12px; border-radius: 3px; }
+.lg.strong i { background: var(--easy); } .lg.medium i { background: var(--medium); } .lg.basic i { background: var(--hard); }
+.skill-group { display: flex; flex-direction: column; gap: 8px; }
+.skill-group h3 { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+.skill-tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-tile { font: inherit; font-weight: 600; font-size: 14px; padding: 8px 12px; border-radius: 8px; border: 1.5px solid; cursor: pointer; }
+.skill-tile.strong { background: var(--easy-soft); color: var(--easy); border-color: var(--easy); }
+.skill-tile.medium { background: var(--medium-soft); color: var(--medium); border-color: var(--medium); }
+.skill-tile.basic { background: var(--hard-soft); color: var(--hard); border-color: var(--hard); }
+.skill-tile:hover { filter: brightness(.97); }
+.link-box { display: flex; flex-direction: column; gap: 10px; }
+.link-box input[type=url] { font-size: 16px; padding: 12px 14px; }
+.notice { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--medium-soft); color: var(--ink); font-size: 14px; }
+.text-toggle { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; font-size: 14px; text-decoration: underline; }
 /* Profile */
 .facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .facts li { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
@@ -447,7 +465,8 @@ td .why { color: var(--muted); font-size: 13px; }
   <input type="number" id="days" min="1" max="30" value="5">
   <div class="panel persist" id="skillsPanel">
     <h2 class="panel-title">Your skills</h2>
-    <label for="skills">In one line <span class="hint">Only used when you haven't uploaded a CV. With a CV, your skills come from it.</span>
+    <div id="skillsBody" class="skills-body"></div>
+    <label for="skills" id="skillsManual">In one line
       <input type="text" id="skills" value="Strong: Java, C, C++. Familiar: Python. Entry level, first job.">
     </label>
   </div>
@@ -884,6 +903,8 @@ async function loadCvFile(file, st) {
     st.textContent = "Got it: " + file.name + ".";
     renderCvPanel();
     refreshActions();
+    renderSkillsPanel();
+    extractSkills();
     return true;
   } catch (e) {
     st.textContent = "Couldn't read that PDF. If it's password-protected, save an unprotected copy and try again."; st.classList.add("error");
@@ -1802,6 +1823,120 @@ function buildSection(key) { const el = BUILDERS[key](current.data); el.dataset.
 function replaceSection(key) { const old = document.querySelector('[data-sec="' + key + '"]'); if (old) old.replaceWith(buildSection(key)); }
 
 /* =====================================================================
+   YOUR SKILLS, read from the CV
+   Claude lists the skills in your CV and judges each one from the CV
+   alone: strong (green), some (yellow), basic (red). The page keeps only
+   skills that really appear in the CV. Click a tile to change its level.
+   ===================================================================== */
+const SKILL_LEVELS = ["strong", "medium", "basic"];
+const SKILL_LABEL = { strong: "Strong", medium: "Some", basic: "Basic" };
+let skillsBusy = false;
+
+async function extractSkills() {
+  if (!cv || !sample || skillsBusy) return;
+  skillsBusy = true; renderSkillsPanel();
+  const prompt = `Read this CV and list the candidate's technical skills: programming languages, frameworks and libraries, tools and platforms, and concepts (for example data structures, networking, operating systems).
+
+For each skill, judge how well the candidate knows it from the CV ONLY:
+- "strong": used substantially in a job, or in more than one project, or clearly a main skill
+- "medium": used in one project or in course work
+- "basic": only listed, or mentioned once without real use
+
+Rules: use each skill's name as written in the CV. Never add a skill that isn't in the CV. List 8 to 30 skills.
+
+THE CV:
+"""
+${cv.text.slice(0, 15000)}
+"""
+${profile ? 'THE PREVIOUS CV (more facts about the same person):\n"""\n' + profile.text.slice(0, 6000) + '\n"""' : ""}
+
+Reply with only JSON: {"skills": [{"name": "Java", "group": "Languages" | "Frameworks & libraries" | "Tools & platforms" | "Concepts", "level": "strong" | "medium" | "basic", "why": "short evidence from the CV"}]}`;
+  try {
+    const res = await sample.json(prompt);
+    const src = cvSourceText();
+    const seen = new Set();
+    cv.skills = arr(res && res.skills)
+      .filter((s) => s && s.name && skillInCv(src, s.name))
+      .filter((s) => { const k = String(s.name).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+      .map((s) => ({ name: String(s.name), group: String(s.group || "Other"), level: SKILL_LEVELS.includes(s.level) ? s.level : "medium", why: String(s.why || "") }));
+    cv.skillsDate = Date.now();
+    store.set(CVKEY, cv);
+    toast(cv.skills.length ? "Found " + cv.skills.length + " skills in your CV." : "Couldn't find skills in the CV.", !cv.skills.length);
+  } catch (e) { toast(errMsg(e), true); }
+  skillsBusy = false;
+  renderSkillsPanel();
+}
+
+function renderSkillsPanel() {
+  const body = $("skillsBody");
+  $("skillsManual").hidden = !!cv;
+  if (!cv) { body.replaceChildren(h("p", { class: "note" }, "Upload your CV and your skills are read from it automatically. Until then, this one line is used.")); return; }
+  const list = arr(cv.skills);
+  const again = h("button", { type: "button", class: "small" }, skillsBusy ? "Reading your CV…" : list.length ? "Read again from the CV" : "Read my skills from the CV");
+  again.disabled = skillsBusy || !sample;
+  again.onclick = extractSkills;
+  if (!list.length) { body.replaceChildren(h("p", { class: "note" }, skillsBusy ? "Reading the skills in " + cv.name + "…" : "Your skills haven't been read from " + cv.name + " yet."), h("div", { class: "row" }, again)); return; }
+  const groups = {};
+  list.forEach((s) => { (groups[s.group] = groups[s.group] || []).push(s); });
+  const order = ["Languages", "Frameworks & libraries", "Tools & platforms", "Concepts"];
+  const names = Object.keys(groups).sort((a, b) => (order.indexOf(a) + 1 || 9) - (order.indexOf(b) + 1 || 9));
+  body.replaceChildren(
+    h("div", { class: "skill-legend" }, SKILL_LEVELS.map((l) => h("span", { class: "lg " + l }, h("i", { "aria-hidden": "true" }), SKILL_LABEL[l]))),
+    ...names.map((g) => h("div", { class: "skill-group" }, h("h3", {}, g), h("div", { class: "skill-tiles" }, groups[g].map((s) => {
+      const t = h("button", { type: "button", class: "skill-tile " + s.level, title: (s.why ? s.why + " · " : "") + "Click to change the level", "aria-label": s.name + ": " + SKILL_LABEL[s.level] + ". Click to change." }, s.name);
+      t.onclick = () => { s.level = SKILL_LEVELS[(SKILL_LEVELS.indexOf(s.level) + 1) % 3]; s.edited = true; store.set(CVKEY, cv); renderSkillsPanel(); };
+      return t;
+    })))),
+    h("p", { class: "note" }, "Read from " + cv.name + ". Click a skill to change its level; your changes are used in every plan."),
+    h("div", { class: "row" }, again));
+}
+const skillLevelsText = () => (cv && arr(cv.skills).length ? "\nSkill levels (from the CV, checked by the candidate): " + cv.skills.map((s) => s.name + " " + s.level).join(", ") : "");
+
+/* =====================================================================
+   READ A JOB POSTING FROM A LINK
+   In the Claude desktop app, the page opens the link in the app's own
+   browser (where you're signed in, so LinkedIn works too) and reads the
+   page's text. Anywhere else, or if reading fails, you paste the text.
+   ===================================================================== */
+let mcpP = null; /* asked for on first use, never at load */
+const getMcp = () => mcpP || (mcpP = inClaude ? window.claude.use("mcp").catch(() => null) : Promise.resolve(null));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const LINK_FAIL = {
+  server_not_connected: "Reading links works only in the Claude desktop app, not in a web browser or on your phone.",
+  not_granted: "Reading links isn't allowed for this page.",
+  not_in_manifest: "You didn't allow this page to use the Claude app's browser.",
+  approval_required: "Opening the page needs your approval.",
+  cancelled: "Opening the page was cancelled.",
+  blocked_by_policy: "Your organization doesn't allow the Claude app's browser here."
+};
+function payloadText(r) {
+  const p = r && r.payload;
+  if (typeof p === "string") return p;
+  if (p && typeof p === "object") return String(p.text || p.content || p.pageText || JSON.stringify(p));
+  return arr(r && r.content).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+}
+async function readJobLink(url) {
+  if (!inClaude) throw new Error("Reading links works in the Claude desktop app. Here, paste the posting's text.");
+  const m = await getMcp();
+  if (!m) throw new Error("Reading links isn't available in this view.");
+  let text = "";
+  try {
+    await m.callTool("host:claude_browser", "navigate", { url }, { cache: false });
+    for (let k = 0; k < 4; k++) {
+      await sleep(k ? 2000 : 1200);
+      text = payloadText(await m.callTool("host:claude_browser", "get_page_text", { max_chars: 40000 }, { cache: false }));
+      if (text.trim().length > 800) break;
+    }
+  } catch (e) {
+    throw new Error(LINK_FAIL[e && e.code] || "Couldn't open that page" + (e && e.message ? " (" + String(e.message).slice(0, 120) + ")" : "") + ".");
+  }
+  const t = text.trim();
+  if (t.length < 300) throw new Error("The page had almost no text. It may need you to sign in.");
+  if (t.length < 3000 && /(sign in|log in|join now|התחבר|הרשמה)/i.test(t.slice(0, 800))) throw new Error("The page asked you to sign in. Sign in once in the Claude app's browser, then try the link again.");
+  return t.slice(0, 30000);
+}
+
+/* =====================================================================
    SCREENS
    Home · New job plan (one question per screen) · Saved plans ·
    a job plan (action buttons + tabs) · My profile · Settings.
@@ -1936,6 +2071,14 @@ function runFlow(host, cfg) {
     next.onclick = async () => {
       const problem = st.check ? st.check(state) : null;
       if (problem) { err.textContent = problem; return; }
+      if (st.beforeNext) {
+        const label = next.textContent;
+        next.disabled = true; back.disabled = true; next.textContent = st.busyLabel || "Working…";
+        let res = null;
+        try { res = await st.beforeNext(state); } finally { next.disabled = false; back.disabled = false; next.textContent = label; }
+        if (res === "__redraw") { draw(); return; }
+        if (res) { err.textContent = res; return; }
+      }
       if (last) await cfg.onFinish(state); else { const v = visible(); cur = v[v.indexOf(cur) + 1]; draw(); }
     };
     const skip = val(st.optional) ? h("button", { type: "button", class: "btn ghost" }, st.skipLabel || "Skip") : null;
@@ -1956,6 +2099,7 @@ function runFlow(host, cfg) {
     if (f) setTimeout(() => f.focus(), 40);
   };
   draw();
+  return { redraw: draw };
 }
 function closeDialog() { const d = $("flowDialog"); if (d.open) d.close(); d.replaceChildren(); }
 $("flowDialog").addEventListener("close", () => $("flowDialog").replaceChildren());
@@ -2000,20 +2144,40 @@ function showNew() {
   route = { name: "new" }; setNav("");
   const host = h("div", { class: "flow-page panel" });
   showView(h("a", { href: "#/", class: "back" }, "← Home"), host);
-  const s = newDraft || (newDraft = { text: "", url: "", skills: $("skills").value, days: clampDays(store.get("jobprep.days", 5)), notes: "" });
-  runFlow(host, {
+  const s = newDraft || (newDraft = { mode: inClaude ? "link" : "text", text: "", url: "", textFrom: "", notice: "", skills: $("skills").value, days: clampDays(store.get("jobprep.days", 5)), notes: "" });
+  const st0 = () => s;
+  const redrawNew = () => flowApi.redraw();
+  const flowApi = runFlow(host, {
     title: "New job plan", state: s, finishLabel: "Build my plan", onCancel: () => go("#/"),
     onFinish: (st) => startAnalysis(st),
     steps: [
-      { title: "Paste the job posting", hint: "Open the posting, select all (Ctrl+A), copy, and paste it here. Hebrew or English both work.",
+      { title: () => (st0().mode === "text" ? "Paste the job posting" : "Where's the job posting?"),
+        hint: () => (st0().mode === "text" ? "Open the posting, select all (Ctrl+A), copy, and paste it here. Hebrew or English both work." : "Paste the link to the posting. I'll open it and read it."),
+        busyLabel: "Reading the page…",
         body: (st) => {
+          const toggle = h("button", { type: "button", class: "text-toggle" }, st.mode === "text" ? "Use a link instead" : "Paste the text instead");
+          toggle.onclick = () => { st.mode = st.mode === "text" ? "link" : "text"; st.notice = ""; host.querySelector(".flow-error").textContent = ""; redrawNew(); };
+          const notice = st.notice ? h("p", { class: "notice", role: "status" }, st.notice) : null;
+          const url = h("input", { type: "url", placeholder: "https://www.linkedin.com/jobs/view/…", "aria-label": "Link to the job posting" });
+          url.value = st.url; url.oninput = () => { st.url = url.value.trim(); st.text = st.textFrom === "link" ? "" : st.text; st.textFrom = ""; };
+          if (st.mode !== "text") {
+            return h("div", { class: "link-box" }, url, notice,
+              h("p", { class: "note" }, inClaude ? "Reading links works in the Claude desktop app; the first time, it asks your permission. LinkedIn needs you to be signed in there." : "Reading links works in the Claude desktop app. Here, paste the text instead."),
+              toggle);
+          }
           const ta = h("textarea", { class: "big", dir: "auto", placeholder: "Paste the full job posting…", "aria-label": "Job posting" });
-          ta.value = st.text; ta.oninput = () => { st.text = ta.value; };
-          const url = h("input", { type: "url", placeholder: "https://…" });
-          url.value = st.url; url.oninput = () => { st.url = url.value.trim(); };
-          return [ta, h("label", {}, h("span", {}, "Link to the posting ", h("span", { class: "hint" }, "(optional, so you can reopen it)")), url)];
+          ta.value = st.text; ta.oninput = () => { st.text = ta.value; st.textFrom = "paste"; };
+          return h("div", { class: "link-box" }, notice, ta, h("label", {}, h("span", {}, "Link to the posting ", h("span", { class: "hint" }, "(optional, so you can reopen it)")), url), toggle);
         },
-        check: (st) => { const t = st.text.trim(); if (!t) return "Paste the posting text first."; if (/^https?:\/\/\S+$/.test(t)) return "That's a link. Open it, copy the text of the posting, and paste that instead."; if (t.length < 200) return "That looks too short for a job posting. Paste the whole description."; return null; } },
+        check: (st) => {
+          if (st.mode !== "text") return /^https?:\/\/\S+\.\S+/.test(st.url) ? null : "Paste a link that starts with https://";
+          const t = st.text.trim(); if (!t) return "Paste the posting text first."; if (/^https?:\/\/\S+$/.test(t)) return "That's a link. Use the link option instead, or paste the posting's text."; if (t.length < 200) return "That looks too short for a job posting. Paste the whole description."; return null;
+        },
+        beforeNext: async (st) => {
+          if (st.mode === "text" || (st.textFrom === "link" && st.text)) return null;
+          try { st.text = await readJobLink(st.url); st.textFrom = "link"; st.notice = ""; return null; }
+          catch (e) { st.mode = "text"; st.text = ""; st.notice = e.message + " Paste the posting's text below instead."; return "__redraw"; }
+        } },
       { title: () => (cv ? "I'll use this CV" : "Add your CV"), hint: () => (cv ? "Your skills and experience come from it, and it's the CV I'll tailor to this job." : "I'll take your skills and experience from it, so I don't have to ask."), optional: () => !cv, skipLabel: "I don't have it now", body: cvStepBody },
       { title: "What are you good at?", when: () => !cv, hint: "Without a CV, one line about your skills helps me mark what you already know.",
         body: (st) => { const i = h("input", { type: "text", "aria-label": "Your skills" }); i.value = st.skills; i.oninput = () => { st.skills = i.value; }; return [i, h("p", { class: "note" }, "For example: Strong: Java, C, C++. Familiar: Python. Entry level, first job.")]; },
@@ -2027,7 +2191,7 @@ function showNew() {
           const first = st.text.trim().split("\n").find((l) => l.trim()) || "";
           const row = (k, v) => h("li", {}, h("span", {}, k), h("strong", {}, v));
           return h("ul", { class: "review" },
-            row("Posting", (first.length > 60 ? first.slice(0, 60) + "…" : first) + " (" + st.text.trim().length.toLocaleString() + " characters)"),
+            row("Posting", st.textFrom === "link" ? "Read from " + (() => { try { return new URL(st.url).hostname.replace(/^www\./, ""); } catch { return "the link"; } })() + " (" + st.text.trim().length.toLocaleString() + " characters)" : (first.length > 60 ? first.slice(0, 60) + "…" : first) + " (" + st.text.trim().length.toLocaleString() + " characters)"),
             row("Your skills", cv ? "From your CV" : st.skills),
             row("CV", cv ? cv.name : "None yet, add it later"),
             row("Study plan", st.days + " days"),
@@ -2228,9 +2392,10 @@ function factsPanel() {
 }
 function showProfile() {
   route = { name: "profile" }; setNav("profile");
-  renderCvPanel(); renderProfileInfo(); renderGithubUI();
+  renderCvPanel(); renderProfileInfo(); renderGithubUI(); renderSkillsPanel();
+  if (cv && !arr(cv.skills).length && sample && !skillsBusy && !cv.skillsDate) extractSkills();
   showView(h("div", { class: "page-head" }, h("div", {}, h("h1", {}, "My profile"), h("p", { class: "lead" }, "What the app knows about you. It all stays in this browser."))),
-    $("skillsPanel"), $("cvPanel"), factsPanel());
+    $("cvPanel"), $("skillsPanel"), factsPanel());
 }
 
 /* ---------- Settings ---------- */
@@ -2322,6 +2487,7 @@ if (inClaude) {
   window.claude.use("sample").then((s) => {
     sample = s;
     if (!s) { $("go").disabled = true; status(noAi(), true); }
+    else if (cv && !cv.skillsDate) extractSkills(); /* a CV uploaded before skills were read from CVs */
   });
 } else {
   $("usageNote").textContent = "Uses your own Claude API key, through your server.";
@@ -2599,7 +2765,8 @@ function candidateText() {
   if (cv) {
     return "THE CANDIDATE'S CV (their skills and experience come from here):\n\"\"\"\n" + cv.text.slice(0, 15000) + "\n\"\"\"" +
       (profile ? "\nTheir previous CV adds:\n\"\"\"\n" + profile.text.slice(0, 6000) + "\n\"\"\"" : "") +
-      (arr(cv.facts).length ? "\nThey also told us:\n" + cv.facts.map((f) => "- " + f.q + " " + f.a).join("\n") : "");
+      (arr(cv.facts).length ? "\nThey also told us:\n" + cv.facts.map((f) => "- " + f.q + " " + f.a).join("\n") : "") +
+      skillLevelsText();
   }
   return "The candidate describes their skills as: " + ($("skills").value.trim() || "entry-level software engineer");
 }
